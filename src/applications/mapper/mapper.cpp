@@ -310,6 +310,8 @@ void Application::Run()
   std::string map_yaml_file_name = out_prefix_ + ".map.yaml";
   std::string map_cfg_file_name = out_prefix_ + ".map.cfg";
   std::string map_cpp_file_name = out_prefix_ + ".map.cpp";
+
+  std::vector<std::string> best_mapping_dumps;
     
   // Prepare live status/log stream.
   std::ofstream log_file;
@@ -369,7 +371,8 @@ void Application::Run()
                                         arch_specs_,
                                         workload_,
                                         sparse_optimizations_,
-                                        &best_));
+                                        &best_,
+                                        best_mapping_dumps));
   }
 
   // Launch the threads.
@@ -654,5 +657,10 @@ void Application::Run()
     mapping_output_file.close();
   } else {
     config.writeFile(map_cfg_file_name.c_str());
+  }
+
+  for (const auto& mapping_dump : best_mapping_dumps)
+  {
+    std::cout << mapping_dump << std::endl;
   }
 }

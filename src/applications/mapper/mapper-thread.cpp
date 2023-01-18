@@ -39,6 +39,38 @@ enum class Betterness
   Worse
 };
 
+std::string DumpMapping(const Mapping& mapping,
+                        const model::Topology::Stats& stats,
+                        const problem::Shape& workload_shape)
+{
+  std::string mapping_dump = "";
+  for (const auto& loop : mapping.loop_nest.loops)
+  {
+    mapping_dump +=
+        workload_shape.FlattenedDimensionIDToName.at(loop.dimension);
+    mapping_dump += "," + std::to_string(loop.start);
+    mapping_dump += "," + std::to_string(loop.end) + ";";
+  }
+  mapping_dump += "\n";
+  for (const auto& boundary : mapping.loop_nest.storage_tiling_boundaries)
+  {
+    mapping_dump += std::to_string(boundary) + ";";
+  }
+  mapping_dump += "\n";
+  for (const auto& [dspace_id, _] : workload_shape.DataSpaceIDToName)
+  {
+    mapping_dump +=
+        (std::stringstream() <<
+            mapping.datatype_bypass_nest.at(dspace_id)).str();
+    mapping_dump += ";";
+  }
+  mapping_dump += "\n";
+  mapping_dump += std::to_string(stats.cycles) + ";"
+                  + std::to_string(stats.energy) + ";";
+
+  return mapping_dump;
+}
+
 static double Cost(const model::Topology::Stats& stats, const std::string metric)
 {
   double cost;
@@ -240,7 +272,8 @@ MapperThread::MapperThread(
   model::Engine::Specs arch_specs,
   problem::Workload &workload,
   sparse::SparseOptimizationInfo* sparse_optimizations,
-  EvaluationResult* best
+  EvaluationResult* best,
+  std::vector<std::string>& best_mapping_dumps
   ) :
     thread_id_(thread_id),
     search_(search),
@@ -261,6 +294,7 @@ MapperThread::MapperThread(
     workload_(workload),
     sparse_optimizations_(sparse_optimizations),
     best_(best),
+    best_mapping_dumps_(best_mapping_dumps),
     thread_(),
     stats_()
 {
@@ -414,9 +448,14 @@ void MapperThread::Run()
       // Sync from thread_best to global best.
       if (stats_.thread_best.valid && !global_pulled)
       {
-        best_->UpdateIfBetter(stats_.thread_best, optimization_metrics_);
+        if (best_->UpdateIfBetter(stats_.thread_best, optimization_metrics_))
+        {
+          best_mapping_dumps_.push_back(DumpMapping(best_->mapping,
+                                                    best_->stats,
+                                                    *workload_.GetShape()));
+        }
       }
-          
+ 
       mutex_->unlock();
     }
 
