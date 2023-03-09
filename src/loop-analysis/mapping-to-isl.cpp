@@ -105,15 +105,16 @@ OccupanciesFromMapping(const loop::Nest& mapping,
   LogicalBufOccupancies result;
   for (auto& [buf, skew] : buf_skew)
   {
+    std::cout << "ops to dspace: " << ops_to_dspace.at(buf.dspace_id) << std::endl;
+    std::cout << "tiling: " << tiling << std::endl;
+    std::cout << "buf skew: " << buf_skew.at(buf) << std::endl;
     result.emplace(std::make_pair(
       buf,
-      skew.apply_range(
-        isl::project_dim_in_after(
-          branch_tiling.apply_range(ops_to_dspace.at(buf.dspace_id)),
-          isl::dim(skew.map, isl_dim_out)
-        )
+      buf_skew.at(buf).apply_range(
+        tiling.apply_range(ops_to_dspace.at(buf.dspace_id))
       )
     ));
+    std::cout << result.at(buf) << std::endl;
   }
 
   return result;
@@ -290,6 +291,32 @@ LogicalBufTilingFromMapping(const mapping::FusedMapping& mapping)
   return result;
 }
 
+LogicalBufTiling
+LogicalBufTilingFromMapping(const loop::Nest& nest,
+                            const problem::Workload& workload)
+{
+  auto branch_tiling = TilingFromMapping(nest);
+  auto buf_to_iter_level = BufferIterLevelsFromMapping(nest, workload);
+
+  LogicalBufTiling result;
+  for (auto& [buf, level] : buf_to_iter_level)
+  {
+    std::cout << "branch tiling: " << branch_tiling.at(0) << std::endl;
+    auto [_, inserted] = result.emplace(std::make_pair(
+      LogicalBuffer(buf.buffer_id, buf.dspace_id, buf.branch_leaf_id),
+      project_dim_in_after(isl::map(branch_tiling.at(buf.branch_leaf_id)),
+                           level)
+    ));
+    if (!inserted)
+    {
+      throw
+        std::logic_error("LogicalBufTilingFromMapping: insertion failed");
+    }
+  }
+
+  return result;
+}
+
 LogicalBufSkews
 LogicalBufSkewsFromMapping(const loop::Nest& nest,  
                            const problem::Workload& workload)
@@ -370,8 +397,16 @@ LogicalBufSkewsFromMapping(const loop::Nest& nest,
   for (const auto& [dspace_id, _] : workload.GetShape()->DataSpaceIDToName)
   {
     result.emplace(std::make_pair(
-      LogicalBuffer(arch_level, dspace_id, 0),
-      TaggedMap<isl::map, spacetime::Dimension>(map, tags)
+      buf,
+      TaggedMap<isl::map, spacetime::Dimension>(
+        isl::map_from_multi_aff(
+          isl::multi_aff::identity_on_domain(isl::space_alloc(GetIslCtx(),
+                                                              0,
+                                                              level,
+                                                              level).domain())
+        ),
+        std::move(tags)
+      )
     ));
   }
 
@@ -505,7 +540,7 @@ isl::map TilingCoefTrackerToMap(TilingCoefTracker&& tracker)
         last_coef *= coef;
       }
     }
-    eq_maff = eq_maff.set_at(op_dim, eq_aff);
+    eq_maff.set_at(op_dim, eq_aff);
   }
 
   auto map = isl::map_from_multi_aff(eq_maff).intersect_domain(iter_set);

@@ -156,9 +156,29 @@ struct TaggedMap
     return *this;
   }
 
-  size_t dim(isl_dim_type dim_type) const
+  inline TaggedMap<Map, InTag, NoTag>
+  apply_range(const isl::map& other_map)
   {
-    return isl_map_dim(map.get(), dim_type);
+    return TaggedMap(map.apply_range(other_map),
+                     std::vector<InTag>(in_tags));
+  }
+
+  void project_dim_in(size_t pos, size_t n)
+  {
+    if (pos + n <= in_tags.size())
+    {
+      map = isl::project_dim(map, isl_dim_in, pos, n);
+      in_tags.erase(in_tags.begin() + pos, in_tags.begin() + pos + n);
+    }
+    else
+    {
+      throw std::out_of_range("pos + n out of range");
+    }
+  }
+
+  inline isl::space space() const
+  {
+    return map.space();
   }
 
   inline TaggedMap<Map, InTag, NoTag>

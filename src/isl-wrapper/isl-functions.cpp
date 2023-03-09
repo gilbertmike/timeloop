@@ -1,12 +1,6 @@
 #include "isl-wrapper/isl-functions.hpp"
-#include "isl/constraint.h"
 
 namespace isl {
-
-size_t dim(const isl::map& map, isl_dim_type dim_type)
-{
-  return isl_map_dim(map.get(), dim_type);
-}
 
 isl::map
 project_dim(isl::map map, isl_dim_type dim_type, size_t start, size_t n)
@@ -55,6 +49,7 @@ isl::aff si_on_domain(isl::space space, int val)
   ));
 }
 
+<<<<<<< HEAD
 isl::map add_dims(isl::map map, isl_dim_type dim_type, size_t n_dims)
 {
   return isl::manage(isl_map_add_dims(map.release(), dim_type, n_dims));
@@ -80,6 +75,8 @@ isl::map move_dims(isl::map map,
   );
 }
 
+=======
+>>>>>>> 89b85c4 (wip)
 isl::map map_to_shifted(isl::space domain_space, size_t pos, int shift)
 {
   auto p_maff = isl_multi_aff_identity_on_domain_space(domain_space.release());
@@ -91,6 +88,7 @@ isl::map map_to_shifted(isl::space domain_space, size_t pos, int shift)
   return isl::manage(isl_map_from_multi_aff(p_maff));
 }
 
+<<<<<<< HEAD
 isl::map map_to_all_after(isl::space domain_space,
                           isl_dim_type dim_type, size_t pos)
 {
@@ -103,11 +101,14 @@ isl::map map_to_all_after(isl::space domain_space,
   ));
 }
 
+=======
+>>>>>>> 89b85c4 (wip)
 isl::map fix_si(isl::map map, isl_dim_type dim_type, size_t pos, int val)
 {
   return isl::manage(isl_map_fix_si(map.release(), dim_type, pos, val));
 }
 
+<<<<<<< HEAD
 isl::map
 insert_equal_dims(isl::map map, size_t in_pos, size_t out_pos, size_t n)
 {
@@ -146,4 +147,6 @@ isl::map insert_dummy_dim_ins(isl::map map, size_t pos, size_t n)
   return isl::manage(p_map);
 }
 
+=======
+>>>>>>> 89b85c4 (wip)
 };  // namespace isl

@@ -86,14 +86,80 @@ bool gResetOnStrideChange = false;
 
 namespace analysis
 {
+using Fill = TaggedMap<isl::map, spacetime::Dimension>;
+using LogicalBufFills = std::map<LogicalBuffer, Fill>;
 
 std::pair<Occupancy, Fill> FillFromOccupancy(Occupancy);
 
-LogicalBufOccupancies
-RemoveIneffectualTemporalDims(const LogicalBufOccupancies& occupancies);
+struct LinkTransferModel
+{
+  virtual LinkTransferInfo Apply(LogicalBufFills&&) const = 0;
+};
 
-std::pair<LogicalBufOccupancies, LogicalBufFills>
-TemporalReuseAnalysis(const LogicalBufOccupancies& occupancies);
+class SimpleLinkTransferModel : public LinkTransferModel
+{
+ public:
+  SimpleLinkTransferModel(size_t n_dims)
+  {
+    if (n_dims == 1)
+    {
+      connectivity_ = isl::map(GetIslCtx(),
+                               "{ [x] -> [x'] : x'=x-1 or x'=x+1 }");
+    }
+    else if (n_dims == 2)
+    {
+      connectivity_ = isl::map(GetIslCtx(),
+                               "{ [x, y] -> [x', y'] : "
+                               "  (x'=x-1 or x'=x+1) "
+                               "  and (y'=y-1 or y'=y+1) }");
+    }
+    else
+    {
+      throw std::logic_error("unsupported");
+    }
+  }
+
+  LinkTransferInfo Apply(LogicalBufFills&& fills) const override
+  {
+    for (const auto& [buf, fill] : fills)
+    {
+      std::cout << "buf: " << buf << std::endl;
+      std::cout << "fill: " << fill << std::endl;
+    }
+
+    return LinkTransferInfo{};
+  }
+
+ private:
+  isl::map connectivity_;
+};
+
+struct MulticastInfo
+{
+  LogicalBufTransfers multicasts;
+};
+
+struct MulticastModel
+{
+  virtual MulticastInfo Apply(LogicalBufFills&&) const = 0;
+};
+
+class SimpleMulticastModel : public MulticastModel
+{
+ public:
+  SimpleMulticastModel() {}
+
+  MulticastInfo Apply(LogicalBufFills&& fills) const override
+  {
+    (void) fills;
+    return MulticastInfo{};
+  }
+};
+
+Fill FillFromOccupancy(Occupancy&&);
+
+LogicalBufFills
+TemporalReuseAnalysis(LogicalBufOccupancies&& occupancies);
 
 struct SpatialReuseInfo
 {
@@ -130,13 +196,14 @@ std::pair<Occupancy, Fill> FillFromOccupancy(Occupancy occupancy)
       if (dim_type == spacetime::Dimension::Time)
       {
         std::cout << occupancy << std::endl;
-        auto time_shift_map = occupancy.tag_like_this(
+        auto time_shift_map = occupancy.TagLikeThis(
           isl::map_to_shifted(occupancy.space().domain(), dim_idx, -1)
         );
         auto occ_before = time_shift_map.apply_range(occupancy.map);
-        auto fill = occupancy.subtract(occ_before.map);
-        auto first_fill = isl::fix_si(fill.map, isl_dim_in, dim_idx, 1);
-        if (first_fill.range().is_empty())
+        auto fill = isl::fix_si(
+          occupancy.map.subtract(occ_before.map), isl_dim_in, dim_idx, 1
+        );
+        if (fill.range().is_empty())
         {
           occupancy.project_dim_in(dim_idx, 1);
           try_again = true;
@@ -433,11 +500,10 @@ void NestAnalysis::ComputeWorkingSets()
   }
 
   auto occupancies = OccupanciesFromMapping(cached_nest, *workload_);
-  auto [eff_occupancies, fills] = TemporalReuseAnalysis(occupancies);
-  auto result = SpatialReuseAnalysis(fills,
-                                     eff_occupancies,
+  auto fills = TemporalReuseAnalysis(std::move(occupancies));
+  auto result = SpatialReuseAnalysis(std::move(fills),
                                      SimpleLinkTransferModel(1),
-                                     SimpleMulticastModel(1));
+                                     SimpleMulticastModel());
 
   // Done.
   working_sets_computed_ = true;
@@ -2320,6 +2386,96 @@ problem::OperationSpace NestAnalysis::GetCurrentWorkingSet(std::vector<analysis:
                                                      mold_high_[level][dim]);
   }
   return problem::OperationSpace(workload_, low_problem_point, high_problem_point);
+}
+
+SpaceTimeToIter ProjectOut(spacetime::Dimension dim_type,
+                           size_t pos,
+                           SpaceTimeToIter&& spacetime_to_iter)
+{
+  size_t dim_idx = pos;
+  if (dim_type == spacetime::Dimension::SpaceY)
+  {
+    dim_idx += spacetime_to_iter.s_levels[0];
+  }
+  else if (dim_type == spacetime::Dimension::Time)
+  {
+    dim_idx += spacetime_to_iter.s_levels[0] + spacetime_to_iter.s_levels[1];
+  }
+
+  spacetime_to_iter.space_time_to_iter = isl_map_project_out(
+    spacetime_to_iter.space_time_to_iter,
+    isl_dim_in,
+    dim_idx,
+    1
+  );
+
+  if (dim_type == spacetime::Dimension::SpaceX)
+  {
+    spacetime_to_iter.s_levels[0] -= 1;
+  }
+  else if (dim_type == spacetime::Dimension::SpaceY)
+  {
+    spacetime_to_iter.s_levels[1] -= 1;
+  }
+  else if (dim_type == spacetime::Dimension::Time)
+  {
+    spacetime_to_iter.t_levels -= 1;
+  }
+
+  return spacetime_to_iter;
+}
+
+SpaceTimeToIter Shift(spacetime::Dimension dim_type,
+                      size_t pos,
+                      int shift_amount,
+                      SpaceTimeToIter&& spacetime_to_iter)
+{
+  size_t dim_idx = pos;
+  if (dim_type == spacetime::Dimension::SpaceY)
+  {
+    dim_idx += spacetime_to_iter.s_levels[0];
+  }
+  else if (dim_type == spacetime::Dimension::Time)
+  {
+    dim_idx += spacetime_to_iter.s_levels[0] + spacetime_to_iter.s_levels[1];
+  }
+
+  auto multi_aff = isl_multi_aff_zero(
+    isl_space_map_from_domain_and_range(
+      isl_space_domain(isl_map_get_space(spacetime_to_iter.space_time_to_iter)),
+      isl_space_domain(isl_map_get_space(spacetime_to_iter.space_time_to_iter))
+  ));
+
+  const auto n_idx = spacetime_to_iter.s_levels[0]
+                     + spacetime_to_iter.s_levels[1]
+                     + spacetime_to_iter.t_levels;
+  for (size_t idx = 0; idx < n_idx; ++idx)
+  {
+    multi_aff = isl_multi_aff_set_aff(
+      multi_aff,
+      idx,
+      isl_aff_set_constant_si(
+        isl_aff_set_coefficient_si(
+          isl_aff_zero_on_domain_space(
+            isl_space_domain(
+              isl_map_get_space(spacetime_to_iter.space_time_to_iter))),
+          isl_dim_in,
+          idx,
+          1
+        ),
+        idx == dim_idx ? shift_amount : 0
+      )
+    );
+  }
+
+  std::cout << "Shift map: " << isl_multi_aff_to_str(multi_aff) << std::endl;
+
+  spacetime_to_iter.space_time_to_iter = isl_map_apply_range(
+    isl_map_from_multi_aff(multi_aff),
+    spacetime_to_iter.space_time_to_iter
+  );
+
+  return spacetime_to_iter;
 }
 
 } // namespace analysis
