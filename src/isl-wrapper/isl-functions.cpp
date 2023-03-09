@@ -50,6 +50,9 @@ isl::aff si_on_domain(isl::space space, int val)
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4899562 (wip)
 isl::map add_dims(isl::map map, isl_dim_type dim_type, size_t n_dims)
 {
   return isl::manage(isl_map_add_dims(map.release(), dim_type, n_dims));
@@ -75,8 +78,11 @@ isl::map move_dims(isl::map map,
   );
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 89b85c4 (wip)
+=======
+>>>>>>> 4899562 (wip)
 isl::map map_to_shifted(isl::space domain_space, size_t pos, int shift)
 {
   auto p_maff = isl_multi_aff_identity_on_domain_space(domain_space.release());

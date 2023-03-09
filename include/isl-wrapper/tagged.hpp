@@ -156,29 +156,9 @@ struct TaggedMap
     return *this;
   }
 
-  inline TaggedMap<Map, InTag, NoTag>
-  apply_range(const isl::map& other_map)
+  size_t dim(isl_dim_type dim_type) const
   {
-    return TaggedMap(map.apply_range(other_map),
-                     std::vector<InTag>(in_tags));
-  }
-
-  void project_dim_in(size_t pos, size_t n)
-  {
-    if (pos + n <= in_tags.size())
-    {
-      map = isl::project_dim(map, isl_dim_in, pos, n);
-      in_tags.erase(in_tags.begin() + pos, in_tags.begin() + pos + n);
-    }
-    else
-    {
-      throw std::out_of_range("pos + n out of range");
-    }
-  }
-
-  inline isl::space space() const
-  {
-    return map.space();
+    return isl_map_dim(map.get(), isl_dim_in);
   }
 
   inline TaggedMap<Map, InTag, NoTag>
@@ -206,6 +186,34 @@ struct TaggedMap
     return map.space();
   }
 
+<<<<<<< HEAD
+  inline TaggedMap<Map, InTag, NoTag>
+  apply_range(const isl::map& other_map)
+  {
+    return TaggedMap(map.apply_range(other_map),
+                     std::vector<InTag>(in_tags));
+  }
+
+  void project_dim_in(size_t pos, size_t n)
+  {
+    if (pos + n <= in_tags.size())
+    {
+      map = isl::project_dim(map, isl_dim_in, pos, n);
+      in_tags.erase(in_tags.begin() + pos, in_tags.begin() + pos + n);
+    }
+    else
+    {
+      throw std::out_of_range("pos + n out of range");
+    }
+  }
+
+  inline isl::space space() const
+  {
+    return map.space();
+  }
+
+=======
+>>>>>>> 4899562 (wip)
   TaggedMap<MapT, InTag, OutTag> intersect(MapT other) const
   {
     return TaggedMap(map.intersect(other),
