@@ -95,6 +95,9 @@ isl::map map_to_shifted(isl::space domain_space, size_t pos, int shift)
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 5ebd3be (wip)
 isl::map map_to_all_after(isl::space domain_space,
                           isl_dim_type dim_type, size_t pos)
 {
@@ -107,8 +110,11 @@ isl::map map_to_all_after(isl::space domain_space,
   ));
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 89b85c4 (wip)
+=======
+>>>>>>> 5ebd3be (wip)
 isl::map fix_si(isl::map map, isl_dim_type dim_type, size_t pos, int val)
 {
   return isl::manage(isl_map_fix_si(map.release(), dim_type, pos, val));

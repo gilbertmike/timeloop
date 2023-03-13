@@ -151,6 +151,7 @@ class SimpleLinkTransferModel : public LinkTransferModel
           n - n_spatial_dims_ - 1
         );
         std::cout << "conn: " << complete_connectivity << std::endl;
+        std::cout << "occupancies: " << occupancies.at(buf) << std::endl;
         auto available_from_neighbors =
           complete_connectivity.apply_range(occupancies.at(buf).map);
         std::cout << "available: " << available_from_neighbors << std::endl;
@@ -186,20 +187,54 @@ struct MulticastModel
 class SimpleMulticastModel : public MulticastModel
 {
  public:
-  SimpleMulticastModel() {}
+  SimpleMulticastModel(size_t n_spatial_dims) :
+    n_spatial_dims_(n_spatial_dims) {}
 
   MulticastInfo Apply(LogicalBufFills& fills,
                       LogicalBufOccupancies& occupancies) const override
   {
-    (void) occupancies;
-    (void) fills;
+    if (n_spatial_dims_ == 1)
+    {
+      /**
+      * Hops = \sum_{x}{|Fill(x) - \union_{x'>x}{Fill(x')}|}
+      */
+      for (auto& [buf, fill] : fills)
+      {
+        auto n = fill.dim(isl_dim_in);
+        auto last_use = fill.subtract(
+          map_to_all_after(fill.space().domain(), isl_dim_in, n-1)
+            .apply_range(fill.map)
+        );
+        auto hops = isl_map_card(last_use.map.copy());
+        std::cout << "hops: " << isl_pw_qpolynomial_to_str(hops) << std::endl;
+      }
+    }
+    else if (n_spatial_dims_ == 2)
+    {
+      /**
+      * inject at (0, 0) along the y-axis first, then x-axis
+      *   yfill(y) = \union_{x}{fill(x, y)}
+      *   yhops = \sum_{y}{|yfill(y) - \union_{y'>y}{yfill(y')}|}
+      *   xhops = \sum_{x, y}{|fill(x, y) - \union_{x'>x}{fill(x', y)}|}
+      */
+      (void) occupancies;
+      (void) fills;
+      throw std::logic_error("unimplemented");
+    }
+
     return MulticastInfo{};
   }
+
+ private:
+  size_t n_spatial_dims_;
 };
 
-Fill FillFromOccupancy(Occupancy);
+std::pair<Occupancy, Fill> FillFromOccupancy(Occupancy);
 
-LogicalBufFills
+LogicalBufOccupancies
+RemoveIneffectualTemporalDims(const LogicalBufOccupancies& occupancies);
+
+std::pair<LogicalBufOccupancies, LogicalBufFills>
 TemporalReuseAnalysis(const LogicalBufOccupancies& occupancies);
 
 struct SpatialReuseInfo
@@ -220,10 +255,14 @@ isl_val* ValOfConstantPwPolynomial(isl_pw_qpolynomial* qp);
 unsigned long ValToUnsignedLong(isl_val* val);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 std::pair<Occupancy, Fill> FillFromOccupancy(Occupancy occupancy)
 =======
 Fill FillFromOccupancy(Occupancy occupancy)
 >>>>>>> 4899562 (wip)
+=======
+std::pair<Occupancy, Fill> FillFromOccupancy(Occupancy occupancy)
+>>>>>>> 5ebd3be (wip)
 {
   /**
    * Compute fill by iteratively going through temporal loops and
@@ -245,10 +284,9 @@ Fill FillFromOccupancy(Occupancy occupancy)
           isl::map_to_shifted(occupancy.space().domain(), dim_idx, -1)
         );
         auto occ_before = time_shift_map.apply_range(occupancy.map);
-        auto fill = isl::fix_si(
-          occupancy.map.subtract(occ_before.map), isl_dim_in, dim_idx, 1
-        );
-        if (fill.range().is_empty())
+        auto fill = occupancy.subtract(occ_before.map);
+        auto first_fill = isl::fix_si(fill.map, isl_dim_in, dim_idx, 1);
+        if (first_fill.range().is_empty())
         {
           occupancy.project_dim_in(dim_idx, 1);
           try_again = true;
@@ -266,17 +304,23 @@ Fill FillFromOccupancy(Occupancy occupancy)
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 std::pair<LogicalBufOccupancies, LogicalBufFills>
 TemporalReuseAnalysis(const LogicalBufOccupancies& occupancies)
 =======
 LogicalBufFills TemporalReuseAnalysis(const LogicalBufOccupancies& occupancies)
 >>>>>>> 4899562 (wip)
+=======
+std::pair<LogicalBufOccupancies, LogicalBufFills>
+TemporalReuseAnalysis(const LogicalBufOccupancies& occupancies)
+>>>>>>> 5ebd3be (wip)
 {
   LogicalBufFills fills;
   LogicalBufOccupancies effectual_occupancies;
 
   for (auto& [buf, occupancy] : occupancies)
   {
+<<<<<<< HEAD
 <<<<<<< HEAD
     auto [eff_occupancy, fill] = FillFromOccupancy(occupancy);
     fills.emplace(std::make_pair(buf, fill));
@@ -287,6 +331,11 @@ LogicalBufFills TemporalReuseAnalysis(const LogicalBufOccupancies& occupancies)
       FillFromOccupancy(occupancy)
     ));
 >>>>>>> 4899562 (wip)
+=======
+    auto [eff_occupancy, fill] = FillFromOccupancy(occupancy);
+    fills.emplace(std::make_pair(buf, fill));
+    effectual_occupancies.emplace(std::make_pair(buf, eff_occupancy));
+>>>>>>> 5ebd3be (wip)
   }
 
   return std::make_pair(effectual_occupancies, fills);
@@ -556,11 +605,11 @@ void NestAnalysis::ComputeWorkingSets()
   }
 
   auto occupancies = OccupanciesFromMapping(cached_nest, *workload_);
-  auto fills = TemporalReuseAnalysis(occupancies);
+  auto [eff_occupancies, fills] = TemporalReuseAnalysis(occupancies);
   auto result = SpatialReuseAnalysis(fills,
-                                     occupancies,
+                                     eff_occupancies,
                                      SimpleLinkTransferModel(1),
-                                     SimpleMulticastModel());
+                                     SimpleMulticastModel(1));
 
   // Done.
   working_sets_computed_ = true;
