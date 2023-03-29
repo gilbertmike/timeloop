@@ -52,6 +52,7 @@
 #include "loop-analysis/isl-ir.hpp"
 #include "loop-analysis/nest-analysis.hpp"
 #include "loop-analysis/spatial-analysis.hpp"
+#include "loop-analysis/temporal-analysis.hpp"
 #include "mapping/fused-mapping.hpp"
 
 bool gTerminateEval = false;
@@ -229,24 +230,6 @@ class SimpleMulticastModel : public MulticastModel
   size_t n_spatial_dims_;
 };
 
-std::pair<Occupancy, Fill> FillFromOccupancy(Occupancy);
-
-LogicalBufOccupancies
-RemoveIneffectualTemporalDims(const LogicalBufOccupancies& occupancies);
-
-std::pair<LogicalBufOccupancies, LogicalBufFills>
-TemporalReuseAnalysis(const LogicalBufOccupancies& occupancies);
-
-struct SpatialReuseInfo
-{
-  LinkTransferInfo link_transfer_info;
-  MulticastInfo multicast_info;
-};
-
-SpatialReuseInfo SpatialReuseAnalysis(LogicalBufFills&,
-                                      LogicalBufOccupancies&,
-                                      const LinkTransferModel&,
-                                      const MulticastModel&);
 
 isl::map MapToShifted(isl::space space, size_t pos, int shift);
 
@@ -254,6 +237,7 @@ isl_val* ValOfConstantPwPolynomial(isl_pw_qpolynomial* qp);
 
 unsigned long ValToUnsignedLong(isl_val* val);
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 std::pair<Occupancy, Fill> FillFromOccupancy(Occupancy occupancy)
@@ -359,6 +343,8 @@ SpatialReuseAnalysis(LogicalBufFills& fills,
   };
 }
 
+=======
+>>>>>>> 52ff054 ([nest-analysis] separate temporal analysis. Commented fused-mapping to build dynamically)
 NestAnalysis::NestAnalysis()
 {
 }
