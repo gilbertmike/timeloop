@@ -274,6 +274,9 @@ applications/design-space/design-space.cpp
 applications/design-space/main.cpp
 """)
 
+gen_mappings = Split()
+
+bin_tree_gen = env.Program(target = 'gen-mapping', source=)
 bin_metrics = env.Program(target = 'timeloop-metrics', source = metrics_sources)
 bin_model = env.Program(target = 'timeloop-model', source = model_sources)
 bin_simple_mapper = env.Program(target = 'timeloop-simple-mapper', source = simple_mapper_sources)
