@@ -27,37 +27,35 @@ struct Root
 
 struct For
 {
+  NodeID id;
   std::string iterator_name;
   problem::Shape::FlattenedDimensionID op_dim;
   std::optional<size_t> begin;
   std::optional<size_t> end;
-
-  NodeID id;
   std::optional<NodeID> child;
 
   For(const NodeID& id,
       const std::string& iterator_name,
-      const problem::Shape::FlattenedDimensionID& op_dim,
-      std::optional<size_t>&& begin = std::nullopt,
-      std::optional<size_t>&& end = std::nullopt);
+      const problem::Shape::FlattenedDimensionID& op_dim);
+      //std::optional<IslAff>&& begin = std::nullopt,
+      //std::optional<IslAff>&& end = std::nullopt);
 };
 
 struct ParFor
 {
+  NodeID id;
   std::string iterator_name;
   problem::Shape::FlattenedDimensionID op_dim;
   // TODO: missing spacetime_dim
   std::optional<size_t> begin;
   std::optional<size_t> end;
-
-  NodeID id;
-  std::optional<NodeID> child;
+  NodeID child;
 
   ParFor(const NodeID& id,
          const std::string& iterator_name,
-         const problem::Shape::FlattenedDimensionID& op_dim,
-         std::optional<size_t>&& begin = std::nullopt,
-         std::optional<size_t>&& end = std::nullopt);
+         const problem::Shape::FlattenedDimensionID& op_dim);
+         //std::optional<IslAff>&& begin = std::nullopt,
+         //std::optional<IslAff>&& end = std::nullopt);
 };
 
 struct Storage
@@ -88,6 +86,7 @@ struct Compute
   std::optional<isl::pw_multi_aff> tiling_spec;
 
   NodeID id;
+  // NodeID child; // Not needed TODO
 
   Compute(const NodeID& id,
           const problem::EinsumID& einsum,
@@ -103,6 +102,18 @@ struct Pipeline
 
 using MappingNodeTypes
     = std::variant<Root, For, ParFor, Storage, Compute, Pipeline>;
+
+struct AddChildToParent {
+  NodeID node_id;
+  AddChildToParent(NodeID& node_id) : node_id{node_id} {}
+  
+  void operator()(Root& parent) { parent.child = node_id; }
+  void operator()(For& parent)   { parent.child = node_id;}
+  void operator()(ParFor& parent)   { parent.child = node_id; }
+  void operator()(Storage& parent) { parent.child = node_id; }
+  void operator()(Compute& parent) { (void) parent; return; } // TODO: throw error
+  void operator()(Pipeline& parent) { parent.children.push_back(node_id); }
+};
 
 class FusedMappingNodeIterator
 {
@@ -128,14 +139,23 @@ class FusedMapping
  public:
   FusedMapping();
 
-  template<typename LoopT, typename... ArgsT>
-  NodeID AddChild(NodeID parent_id, ArgsT... args)
+  NodeID AddChild(NodeID parent_id, MappingNodeTypes& node)
   {
-    auto [it, _] = nodes_.emplace(
-      MappingNodeTypes(std::in_place_type<LoopT>, nodes_.size(), args...)
-    );
+    NodeID node_id = max_id;
+    max_id++;
+    nodes_.emplace(std::make_pair(node_id, node));
 
-    return it->first;
+    std::visit(AddChildToParent{node_id}, NodeAt(parent_id));
+    // switch(nodes_[parent_id].index()) {
+    //   case 0: std::get<Root>(nodes_[parent_id]).child = node_id; break;
+    //   case 1: std::get<For>(nodes_[parent_id]).child = node_id; break;
+    //   case 2: std::get<ParFor>(nodes_[parent_id]).child = node_id; break;
+    //   case 3: std::get<Storage>(nodes_[parent_id]).child = node_id; break;
+    //   case 4: break;
+    //   case 5: std::get<Pipeline>(nodes_[parent_id]).children.push_back(node_id);
+    //   default: break;
+    // }
+    return node_id;
   }
 
   const MappingNodeTypes& NodeAt(const NodeID& node_id) const;
@@ -148,6 +168,7 @@ class FusedMapping
   Iterator end();
 
  private:
+  NodeID max_id;
   std::map<NodeID, MappingNodeTypes> nodes_;
 };
 
