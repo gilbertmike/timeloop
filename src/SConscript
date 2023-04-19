@@ -152,7 +152,6 @@ mapping/loop.cpp
 mapping/nest.cpp
 mapping/spacetime.cpp
 mapping/fused-mapping/fused-mapping.cpp
-mapping/fused-mapping/mapping-path.cpp
 model/model-base.cpp
 model/engine.cpp
 model/level.cpp
@@ -285,7 +284,8 @@ bin_simple_mapper = env.Program(target = 'timeloop-simple-mapper', source = simp
 bin_mapper = env.Program(target = 'timeloop-mapper', source = mapper_sources)
 bin_design_space = env.Program(target = 'timeloop-design-space', source = design_space_sources)
 
-env.Install(env["BUILD_BASE_DIR"] + '/bin', [ bin_metrics,
+env.Install(env["BUILD_BASE_DIR"] + '/bin', [ bin_tree_gen,
+                                              bin_metrics,
                                               bin_model,
                                               bin_simple_mapper,
                                               bin_mapper,

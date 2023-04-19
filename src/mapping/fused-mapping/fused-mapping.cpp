@@ -10,11 +10,11 @@ For::For(const NodeID& id,
          const problem::Shape::FlattenedDimensionID& op_dim,
          std::optional<size_t>&& begin,
          std::optional<size_t>&& end) :
+  id(id),
   iterator_name(iterator_name),
   op_dim(op_dim),
   begin(begin),
-  end(end),
-  id(id)
+  end(end)
 {
 }
 
@@ -23,11 +23,11 @@ ParFor::ParFor(const NodeID& id,
                const problem::Shape::FlattenedDimensionID& op_dim,
                std::optional<size_t>&& begin,
                std::optional<size_t>&& end) :
+  id(id),
   iterator_name(iterator_name),
   op_dim(op_dim),
   begin(begin),
-  end(end),
-  id(id)
+  end(end)
 {
 }
 

@@ -36,9 +36,9 @@ struct For
 
   For(const NodeID& id,
       const std::string& iterator_name,
-      const problem::Shape::FlattenedDimensionID& op_dim);
-      //std::optional<IslAff>&& begin = std::nullopt,
-      //std::optional<IslAff>&& end = std::nullopt);
+      const problem::Shape::FlattenedDimensionID& op_dim,
+      std::optional<size_t>&& begin = std::nullopt,
+      std::optional<size_t>&& end = std::nullopt);
 };
 
 struct ParFor
@@ -53,9 +53,9 @@ struct ParFor
 
   ParFor(const NodeID& id,
          const std::string& iterator_name,
-         const problem::Shape::FlattenedDimensionID& op_dim);
-         //std::optional<IslAff>&& begin = std::nullopt,
-         //std::optional<IslAff>&& end = std::nullopt);
+         const problem::Shape::FlattenedDimensionID& op_dim,
+         std::optional<size_t>&& begin = std::nullopt,
+         std::optional<size_t>&& end = std::nullopt);
 };
 
 struct Storage
@@ -139,7 +139,7 @@ class FusedMapping
  public:
   FusedMapping();
 
-  NodeID AddChild(NodeID parent_id, MappingNodeTypes& node)
+  /*NodeID AddChild(NodeID parent_id, MappingNodeTypes& node)
   {
     NodeID node_id = max_id;
     max_id++;
@@ -156,6 +156,17 @@ class FusedMapping
     //   default: break;
     // }
     return node_id;
+  }*/
+  template<typename LoopT, typename... ArgsT>
+  NodeID AddChild(NodeID parent_id, ArgsT... args)
+  {
+    auto [it, _] = nodes_.emplace(
+      MappingNodeTypes(std::in_place_type<LoopT>, nodes_.size(), args...)
+    );
+    parent_id++;
+    // NodeID node_id = it->first;
+    // std::visit(AddChildToParent{node_id}, NodeAt(parent_id));
+    return it->first;
   }
 
   const MappingNodeTypes& NodeAt(const NodeID& node_id) const;
