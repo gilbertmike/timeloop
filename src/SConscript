@@ -279,6 +279,12 @@ applications/looptree/model.cpp
 applications/looptree/main.cpp
 """)
 
+gen_mappings = Split("""
+applications/gen-mappings/generate_mappings.cpp
+""")
+
+bin_tree_gen = env.Program(target = 'gen-mapping', source = gen_mappings)
+
 # bin_metrics = env.Program(target = 'timeloop-metrics', source = metrics_sources)
 # bin_model = env.Program(target = 'timeloop-model', source = model_sources)
 # bin_simple_mapper = env.Program(target = 'timeloop-simple-mapper', source = simple_mapper_sources)
@@ -291,8 +297,9 @@ env.Install(env["BUILD_BASE_DIR"] + '/bin', [
                                             #   bin_model,
                                             #   bin_simple_mapper,
                                             #   bin_mapper,
-                                            #   bin_design_space
-                                            bin_looptree
+                                            #   bin_design_space,
+                                            #   bin_looptree,
+                                            bin_tree_gen
                                             ])
 
 #os.symlink(os.path.abspath('timeloop-mapper'), os.path.abspath('timeloop'))
