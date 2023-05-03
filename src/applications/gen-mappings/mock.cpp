@@ -18,7 +18,7 @@ int num_tiles(int dim) {
 int num_mappings(int m1, int k1, int n1, int n2) {
     // storage can be between DRAM and pipeline
     // ordering of the loops
-    return num_tiles(m1) * num_tiles(n1) * num_tiles(n2);  // tile only on consumer: m2 = m1, k2 = n1, n2
+    return 3 * 6 * num_tiles(m1) * num_tiles(n1) * num_tiles(n2);  // tile only on consumer: m2 = m1, k2 = n1, n2
 }
 
 int main() {

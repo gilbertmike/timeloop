@@ -158,6 +158,7 @@ class FusedMapping
   template<typename LoopT, typename... ArgsT>
   NodeID AddChild(NodeID parent_id, ArgsT... args)
   {
+    std::cout << "ParentID received: " << parent_id << std::endl;
     auto [it, _] = nodes_.emplace(std::make_pair(
       nodes_.size(),
       MappingNodeTypes(std::in_place_type<LoopT>, nodes_.size(), args...)
