@@ -51,50 +51,50 @@ class CCRet
         template<typename... ArgsT>
         void EmplaceBack(ArgsT&&... args)
         {
-          std::get<YAMLVector>(data_).push_back(
-              std::make_unique<CCRet>(std::forward<ArgsT>(args)...)
-          );
+            std::get<YAMLVector>(data_).push_back(
+                std::make_unique<CCRet>(std::forward<ArgsT>(args)...)
+            );
         }
 
         size_t Size() const
         {
-          return std::visit(
-              [] (auto&& data)
-              {
-                  using DataT = std::decay_t<decltype(data)>;
-                  if constexpr (std::is_same_v<DataT, YAMLLiteral>)
-                  {
-                    return (size_t)1;
-                  }
-                  else
-                  {
-                    return data.size();
-                  }
-              },
-              data_
+            return std::visit(
+                [] (auto&& data)
+                {
+                    using DataT = std::decay_t<decltype(data)>;
+                    if constexpr (std::is_same_v<DataT, YAMLLiteral>)
+                    {
+                        return (size_t)1;
+                    }
+                    else
+                    {
+                        return data.size();
+                    }
+                },
+                data_
             );
         }
 
         template<typename T>
         static CCRet Literal(const T& val)
         {
-          auto ret = CCRet();
-          ret.data_ = val;
-          return ret;
+            auto ret = CCRet();
+            ret.data_ = val;
+            return ret;
         }
 
         static CCRet Vector()
         {
-          auto ret = CCRet();
-          ret.data_ = YAMLVector();
-          return ret;
+            auto ret = CCRet();
+            ret.data_ = YAMLVector();
+            return ret;
         }
 
         static CCRet Map()
         {
-          auto ret = CCRet();
-          ret.data_ = YAMLMap();
-          return ret;
+            auto ret = CCRet();
+            ret.data_ = YAMLMap();
+            return ret;
         }
 
     private:
@@ -102,7 +102,7 @@ class CCRet
 };
 
 int main(int argc, char* argv[]) {
-  auto val = CCRet::Vector();
-  val.EmplaceBack(CCRet::Literal("a value"));
-  std::cout << val.Size() << std::endl;
+    auto val = CCRet::Vector();
+    val.EmplaceBack(CCRet::Literal("a value"));
+    std::cout << val.Size() << std::endl;
 }
