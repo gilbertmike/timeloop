@@ -41,7 +41,8 @@ class CompoundConfigNode
  private:
   libconfig::Setting* LNode = nullptr;
   YAML::Node YNode;
-  CompoundConfig* cConfig = nullptr; 
+  CompoundConfig* cConfig = nullptr;
+  CCRet dynamicConfig;
 
  public:
   CompoundConfigNode(){}
