@@ -29,26 +29,22 @@ using YAMLType = std::variant<
 
 class CCRet
 {
-    YAMLType data_;
+    private:
+        YAMLType data_ = nullptr;
 
     public:
+        /** VALUE RESOLUTION **/
         // unpacks a literal CCRet
-        YAMLLiteral& GetValue()
-        {
-            return std::get<YAMLLiteral>(data_);
-        }
-
+        inline YAMLLiteral& GetValue()
+        { return std::get<YAMLLiteral>(data_); } 
         // resolves a map CCRet
-        CCRet& At(const std::string& key)
-        {
-            return *std::get<YAMLMap>(data_).at(key);
-        }
-
+        inline CCRet& At(const std::string& key)
+        { return *std::get<YAMLMap>(data_).at(key); }
         // resolves a list CCRet
-        CCRet& At(YAMLVector::size_type index)
-        {
-            return *std::get<YAMLVector>(data_).at(index);
-        }
+        inline CCRet& At(YAMLVector::size_type index)
+        { return *std::get<YAMLVector>(data_).at(index); }
+
+        // Michael added this, no clue what it does for now
         template<typename... ArgsT>
         void EmplaceBack(ArgsT&&... args)
         {
@@ -76,6 +72,7 @@ class CCRet
             );
         }
 
+        // Michael added this, no clue what it does for now
         template<typename T>
         static CCRet Literal(const T& val)
         {
