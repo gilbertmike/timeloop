@@ -46,7 +46,8 @@ class CCRet
 
         /** CONTAINER FUNCTIONS **/
         // We could internally cast everything to unsigned long long to cut down
-        // on code size. 
+        // on code size.
+        /** lookup **/
         bool lookupValue(const char *name, bool &value) const;
         bool lookupValue(const char *name, int &value) const;
         bool lookupValue(const char *name, unsigned int &value) const;
@@ -59,6 +60,31 @@ class CCRet
         bool lookupValue(const char *name, const char *&value) const;
         // this is the only one we cant cast to unsigned long long
         bool lookupValue(const char *name, std::string &value) const;
+        
+        /** contained **/
+        bool exists(const char *name) const;
+
+        /** std::string compatibility **/
+        inline bool lookupValue(const std::string &name, bool &value) const
+        { return(lookupValue(name.c_str(), value)); }
+        inline bool lookupValue(const std::string &name, int &value) const
+        { return(lookupValue(name.c_str(), value)); }
+        inline bool lookupValue(const std::string &name, unsigned int &value) const
+        { return(lookupValue(name.c_str(), value)); }
+        inline bool lookupValue(const std::string &name, long long &value) const
+        { return(lookupValue(name.c_str(), value)); }
+        inline bool lookupValue(const std::string &name, unsigned long long &value) const
+        { return(lookupValue(name.c_str(), value)); }
+        inline bool lookupValue(const std::string &name, double &value) const
+        { return(lookupValue(name.c_str(), value)); }
+        inline bool lookupValue(const std::string &name, float &value) const
+        { return(lookupValue(name.c_str(), value)); }
+        inline bool lookupValue(const std::string &name, const char *&value) const
+        { return(lookupValue(name.c_str(), value)); }
+        inline bool lookupValue(const std::string &name, std::string &value) const
+        { return(lookupValue(name.c_str(), value)); }
+        inline bool exists(const std::string &name) const
+        { return(exists(name.c_str())); }
 
         // Michael added this, no clue what it does for now
         template<typename... ArgsT>
