@@ -44,6 +44,22 @@ class CCRet
         inline CCRet& At(YAMLVector::size_type index)
         { return *std::get<YAMLVector>(data_).at(index); }
 
+        /** CONTAINER FUNCTIONS **/
+        // We could internally cast everything to unsigned long long to cut down
+        // on code size. 
+        bool lookupValue(const char *name, bool &value) const;
+        bool lookupValue(const char *name, int &value) const;
+        bool lookupValue(const char *name, unsigned int &value) const;
+        bool lookupValueLongOnly(const char *name, long long &value) const; // Only for values with an L like 123L
+        bool lookupValueLongOnly(const char *name, unsigned long long &value) const; // Only for values with an L like 123L
+        bool lookupValue(const char *name, long long &value) const;
+        bool lookupValue(const char *name, unsigned long long &value) const;
+        bool lookupValue(const char *name, double &value) const;
+        bool lookupValue(const char *name, float &value) const;
+        bool lookupValue(const char *name, const char *&value) const;
+        // this is the only one we cant cast to unsigned long long
+        bool lookupValue(const char *name, std::string &value) const;
+
         // Michael added this, no clue what it does for now
         template<typename... ArgsT>
         void EmplaceBack(ArgsT&&... args)
