@@ -457,7 +457,7 @@ bool CompoundConfigNode::lookupArrayValue(const char* name, std::vector<std::str
 
 bool CompoundConfigNode::isList() const {
   if (dynamicConfig) {
-    return dynamicConfig.isList();
+    return (*dynamicConfig).isList();
   } else if(LNode) return LNode->isList();
   else if (YNode) {
     if (YNode.IsSequence()) {
