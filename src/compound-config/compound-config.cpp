@@ -598,6 +598,13 @@ bool CompoundConfigNode::getArrayValue(std::vector<std::string> &vectorValue) {
 }
 
 bool CompoundConfigNode::getMapKeys(std::vector<std::string> &mapKeys) {
+  if (dynamicConfig) {
+    if (!(*dynamicConfig).get().isMap()) return false;
+    else {
+      mapKeys = (*dynamicConfig).get().getMapKeys();
+      return true;
+    }
+  }
   if (LNode) {
     assert(LNode->isGroup());
     for (auto it = LNode->begin(); it != LNode->end(); it++) {
