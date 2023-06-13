@@ -63,6 +63,9 @@ class CompoundConfigNode
   libconfig::Setting& getLNode() {return *LNode;}
   YAML::Node getYNode() {return YNode;}
 
+  /**
+   * @brief return compound config node corresponding with `path`.
+   */
   CompoundConfigNode lookup(const char *path) const;
   inline CompoundConfigNode lookup(const std::string &path) const
   { return(lookup(path.c_str())); }

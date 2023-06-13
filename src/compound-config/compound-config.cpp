@@ -98,9 +98,8 @@ CompoundConfigNode::CompoundConfigNode(libconfig::Setting* _lnode,
 CompoundConfigNode CompoundConfigNode::lookup(const char *path) const {
   EXCEPTION_PROLOGUE;
   if (dynamicConfig) {
-    // need to treat this carefully on return or else we might brick the entire
-    // codebase. Not necessarily sure where this output is used.
-    return CompoundConfigNode();
+    structured_config::CCRet& dynamicNode = (*dynamicConfig).get().lookup(path);
+    return CompoundConfigNode(nullptr, YAML::Node(), cConfig, dynamicNode);
   } else if (LNode) {
     libconfig::Setting& nextNode = LNode->lookup(path);
     return CompoundConfigNode(&nextNode, YAML::Node(), cConfig);
@@ -127,7 +126,10 @@ CompoundConfigNode CompoundConfigNode::lookup(const char *path) const {
 
 bool CompoundConfigNode::lookupValue(const char *name, bool &value) const {
   EXCEPTION_PROLOGUE;
-  if (LNode) return LNode->lookupValue(name, value);
+  if (dynamicConfig) {
+    value = std::get<bool>((*dynamicConfig).get().lookup(name).GetValue());
+    return true;
+  } else if (LNode) return LNode->lookupValue(name, value);
   else if (YNode) {
     if (YNode.IsScalar() || !YNode[name].IsDefined() || !YNode[name].IsScalar()) return false;
     try {

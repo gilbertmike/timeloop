@@ -16,7 +16,7 @@ class CCRet; // forward definition
 
 // Literal value types possible in a YAML file
 using YAMLLiteral = std::variant<
-  std::string, int, float
+  std::string, int, float, bool
 >;
 // YAML vector representation
 using YAMLVector = std::vector<std::unique_ptr<CCRet>>;
@@ -48,6 +48,9 @@ class CCRet
     { return *std::get<YAMLVector>(data_).at(index); }
 
     CCRet& operator [](int idx);
+
+    /** NODE FINDER **/
+    CCRet& lookup(const char *path);
 
     /** TYPE RESOLUTION **/
     // we do not need isArray as isArray is only used for LNode, which is bypassed
