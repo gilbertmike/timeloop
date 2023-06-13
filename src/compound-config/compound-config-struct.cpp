@@ -15,6 +15,7 @@ namespace structured_config {
 CCRet CCRet::operator [](int idx) const {
   assert(isList());
 
-  return At((YAMLVector::size_type) idx);
+  if (idx < Size()) return At((YAMLVector::size_type) idx);
+  else return CCRet();
 }
 }
