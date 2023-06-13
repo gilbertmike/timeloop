@@ -46,6 +46,8 @@ class CCRet
     inline CCRet& At(YAMLVector::size_type index) const
     { return *std::get<YAMLVector>(data_).at(index); }
 
+    CCRet operator [](int idx) const;
+
     /** TYPE RESOLUTION **/
     // we do not need isArray as isArray is only used for LNode, which is bypassed
     // when we do dynamic checking
@@ -55,8 +57,6 @@ class CCRet
     { return std::holds_alternative<YAMLVector>(data_); }
     inline bool isMap() const
     { return std::holds_alternative<YAMLMap>(data_); }
-
-    CCRet operator [](int idx) const;
 
     /** contained **/
     bool exists(const char *name) const;
