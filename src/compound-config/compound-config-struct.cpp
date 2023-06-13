@@ -17,4 +17,8 @@ CCRet& CCRet::operator [](int idx) {
 
   return At(idx);
 }
+
+bool CCRet::exists(std::string name) const {
+  return std::get<YAMLMap>(data_).count(name) != 0;
+}
 }

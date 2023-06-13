@@ -471,8 +471,23 @@ bool CompoundConfigNode::exists(const char *name) const {
 
 bool CompoundConfigNode::lookupArrayValue(const char* name, std::vector<std::string> &vectorValue) const {
   EXCEPTION_PROLOGUE;
+  if (dynamicConfig) {
+    // fetches array at name
+    structured_config::CCRet& node = (*dynamicConfig).get().At(std::string(name));
+    // makes sure array at name is an array
+    assert(node.isList());
 
-  if (LNode) {
+    // constructs the vector array
+    std::vector<std::string> ret;
+    
+    for (int i = 0; (size_t) i < node.Size(); i++) {
+      ret.emplace_back(std::get<std::string>(node.At(i).GetValue()));
+    }
+
+    // places back
+    vectorValue = ret;
+    return true;
+  } else if (LNode) {
     assert(LNode->lookup(name).isArray());
     for (const std::string m: LNode->lookup(name))
     {
