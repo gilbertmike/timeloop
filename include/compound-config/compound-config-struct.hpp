@@ -43,7 +43,17 @@ class CCRet
     // resolves a list CCRet
     inline CCRet& At(YAMLVector::size_type index)
     { return *std::get<YAMLVector>(data_).at(index); }
-    
+
+    /** TYPE RESOLUTION **/
+    // we do not need isArray as isArray is only used for LNode, which is bypassed
+    // when we do dynamic checking
+    inline bool isLiteral()
+    { return std::holds_alternative<YAMLLiteral>(data_); }
+    inline bool isList()
+    { return std::holds_alternative<YAMLVector>(data_); }
+    inline bool isMap()
+    { return std::holds_alternative<YAMLMap>(data_); }
+
     /** contained **/
     bool exists(const char *name) const;
 
