@@ -98,7 +98,7 @@ CompoundConfigNode::CompoundConfigNode(libconfig::Setting* _lnode,
 CompoundConfigNode CompoundConfigNode::lookup(const char *path) const {
   EXCEPTION_PROLOGUE;
   if (dynamicConfig) {
-    structured_config::CCRet& dynamicNode = (*dynamicConfig).get().lookup(path);
+    structured_config::CCRet& dynamicNode = (*dynamicConfig).get().At(std::string(path));
     return CompoundConfigNode(nullptr, YAML::Node(), cConfig, dynamicNode);
   } else if (LNode) {
     libconfig::Setting& nextNode = LNode->lookup(path);
@@ -127,7 +127,7 @@ CompoundConfigNode CompoundConfigNode::lookup(const char *path) const {
 bool CompoundConfigNode::lookupValue(const char *name, bool &value) const {
   EXCEPTION_PROLOGUE;
   if (dynamicConfig) {
-    value = std::get<bool>((*dynamicConfig).get().lookup(name).GetValue());
+    value = std::get<bool>((*dynamicConfig).get().At(std::string(name)).GetValue());
     return true;
   } else if (LNode) return LNode->lookupValue(name, value);
   else if (YNode) {

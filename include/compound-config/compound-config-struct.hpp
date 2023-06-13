@@ -49,9 +49,6 @@ class CCRet
 
     CCRet& operator [](int idx);
 
-    /** NODE FINDER **/
-    CCRet& lookup(const char *path);
-
     /** TYPE RESOLUTION **/
     // we do not need isArray as isArray is only used for LNode, which is bypassed
     // when we do dynamic checking

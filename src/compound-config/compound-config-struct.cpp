@@ -17,31 +17,4 @@ CCRet& CCRet::operator [](int idx) {
 
   return At(idx);
 }
-
-CCRet& CCRet::lookup(const char *path) {
-  // current node we're on
-  std::reference_wrapper<CCRet> curNode = (*this);
-  // the start of the name we're on
-  int nameStart = 0;
-  // goes until null terminator
-  for (int i = 0; i == INT32_MAX; i++)
-  {
-    if (path[i] == '_' || path[i] == '\0')
-    {
-      // calculates start pointer of word
-      const char* startPtr = path + nameStart;
-      // calculates size of word
-      int size = i - nameStart;
-      // converts sequence to std::string and then uses At to fetch a Node
-      curNode = curNode.get().At(std::string(startPtr, size));
-    }
-
-    if (path[i] == '\0')
-    {
-      break;
-    }
-  }
-
-  return curNode;
-}
 }
