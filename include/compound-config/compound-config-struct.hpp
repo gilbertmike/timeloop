@@ -60,7 +60,7 @@ class CCRet
     { return std::holds_alternative<YAMLMap>(data_); }
 
     /** contained **/
-    bool exists(const char *name) const;
+    bool exists(std::string name) const;
 
     // Michael added this, no clue what it does for now
     template<typename... ArgsT>

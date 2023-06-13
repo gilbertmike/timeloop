@@ -459,7 +459,8 @@ bool CompoundConfigNode::lookupValue(const char *name, std::string &value) const
 
 bool CompoundConfigNode::exists(const char *name) const {
   EXCEPTION_PROLOGUE;
-  if (LNode) return LNode->exists(name);
+  if (dynamicConfig) return (*dynamicConfig).get().exists(std::string(name));
+  else if (LNode) return LNode->exists(name);
   else if (YNode) return !YNode.IsScalar() && YNode[name].IsDefined();
   else {
     assert(false);
