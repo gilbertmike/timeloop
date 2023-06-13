@@ -13,7 +13,7 @@
 
 namespace structured_config {
 CCRet CCRet::operator [](int idx) const {
-  if (idx != 0) return CCRet();
+  if (idx < 0) return CCRet();
   else return CCRet();
   // assert(isList());
 

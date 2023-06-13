@@ -24,6 +24,7 @@ using YAMLVector = std::vector<std::unique_ptr<CCRet>>;
 using YAMLMap = std::map<std::string, std::unique_ptr<CCRet>>;
 // YAML value types possible
 using YAMLType = std::variant<
+  std::monostate,
   YAMLLiteral,
   YAMLVector,
   YAMLMap
@@ -79,8 +80,9 @@ class CCRet
           if constexpr (std::is_same_v<DataT, YAMLLiteral>)
           {
             return (size_t)1;
-          }
-          else
+          } else if constexpr(std::is_same_v<DataT, std::monostate>) {
+            return (size_t)0;
+          } else
           {
             return data.size();
           }
