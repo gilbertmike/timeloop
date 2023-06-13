@@ -90,7 +90,7 @@ CompoundConfigNode CompoundConfigNode::lookup(const char *path) const {
   if (dynamicConfig) {
     // need to treat this carefully on return or else we might brick the entire
     // codebase. Not necessarily sure where this output is used.
-
+    return CompoundConfigNode();
   } else if (LNode) {
     libconfig::Setting& nextNode = LNode->lookup(path);
     return CompoundConfigNode(&nextNode, YAML::Node(), cConfig);
@@ -506,12 +506,14 @@ CompoundConfigNode CompoundConfigNode::operator [](int idx) const {
 
   if (dynamicConfig) {
     // also need to be careful here as you don't know where this return value is going
+    structured_config::CCRet operatorEnd = (*dynamicConfig)[idx]; 
+    return CompoundConfigNode(nullptr, YAML::Node(), cConfig, &operatorEnd);
   } else if(LNode) return CompoundConfigNode(&(*LNode)[idx], YAML::Node(), cConfig);
   else if (YNode) {
-      auto yIter = YNode.begin();
-      for (int i = 0; i < idx; i++) yIter++;
-      auto nextNode = *yIter;
-      return CompoundConfigNode(nullptr, nextNode, cConfig);
+    auto yIter = YNode.begin();
+    for (int i = 0; i < idx; i++) yIter++;
+    auto nextNode = *yIter;
+    return CompoundConfigNode(nullptr, nextNode, cConfig);
   }
   else {
     assert(false);

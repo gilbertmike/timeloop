@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <memory>
 #include <iostream>
+// for asserts
+#include <cassert>
 
 namespace structured_config {
 class CCRet; // forward definition
@@ -38,10 +40,10 @@ class CCRet
     inline YAMLLiteral& GetValue()
     { return std::get<YAMLLiteral>(data_); } 
     // resolves a map CCRet
-    inline CCRet& At(const std::string& key)
+    inline CCRet& At(const std::string& key) const
     { return *std::get<YAMLMap>(data_).at(key); }
     // resolves a list CCRet
-    inline CCRet& At(YAMLVector::size_type index)
+    inline CCRet& At(YAMLVector::size_type index) const
     { return *std::get<YAMLVector>(data_).at(index); }
 
     /** TYPE RESOLUTION **/
@@ -49,10 +51,12 @@ class CCRet
     // when we do dynamic checking
     inline bool isLiteral()
     { return std::holds_alternative<YAMLLiteral>(data_); }
-    inline bool isList()
+    inline bool isList() const
     { return std::holds_alternative<YAMLVector>(data_); }
-    inline bool isMap()
+    inline bool isMap() const
     { return std::holds_alternative<YAMLMap>(data_); }
+
+    CCRet operator [](int idx) const;
 
     /** contained **/
     bool exists(const char *name) const;

@@ -12,9 +12,9 @@
 #include "compound-config/compound-config-struct.hpp"
 
 namespace structured_config {
-int main(int argc, char* argv[]) {
-    auto val = CCRet::Vector();
-    val.EmplaceBack(CCRet::Literal("a value"));
-    std::cout << val.Size() << std::endl;
+CCRet CCRet::operator [](int idx) const {
+  assert(isList());
+
+  return At((YAMLVector::size_type) idx);
 }
 }

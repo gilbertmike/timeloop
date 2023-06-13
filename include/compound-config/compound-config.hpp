@@ -56,7 +56,7 @@ class CompoundConfigNode
 
   // necessary dynamic config return type. Creates a perfect copy of this node
   // with its dynamic element. Necessary for the operator 
-  CompoundConfigNode(libconfig::Setting)
+  CompoundConfigNode(libconfig::Setting* _lnode, YAML::Node _ynode, CompoundConfig* _cConfig, structured_config::CCRet* dynamicConfig);
 
   libconfig::Setting& getLNode() {return *LNode;}
   YAML::Node getYNode() {return YNode;}
