@@ -85,6 +85,13 @@ CompoundConfigNode::CompoundConfigNode(libconfig::Setting* _lnode, YAML::Node _y
   cConfig = _cConfig;
 }
 
+CompoundConfigNode::CompoundConfigNode(libconfig::Setting* _lnode, YAML::Node _ynode, CompoundConfig* _cConfig, structured_config::CCRet* _dynamicConfig) {
+  LNode = _lnode;
+  YNode = _ynode;
+  cConfig = _cConfig;
+  dynamicConfig = _dynamicConfig;
+}
+
 CompoundConfigNode CompoundConfigNode::lookup(const char *path) const {
   EXCEPTION_PROLOGUE;
   if (dynamicConfig) {
