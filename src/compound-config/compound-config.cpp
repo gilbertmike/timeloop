@@ -319,7 +319,10 @@ bool CompoundConfigNode::lookupValue(const char *name, unsigned long long &value
 
 bool CompoundConfigNode::lookupValue(const char *name, double &value) const {
   EXCEPTION_PROLOGUE;
-  if (LNode) {
+  if (dynamicConfig) {
+    value = std::get<double>((*dynamicConfig).get().At(std::string(name)).GetValue());
+    return true;
+  } else if (LNode) {
     int i_value = 0;
     if (LNode->lookupValue(name, i_value)) {
       value = static_cast<double>(i_value);
@@ -356,7 +359,10 @@ bool CompoundConfigNode::lookupValue(const char *name, double &value) const {
 
 bool CompoundConfigNode::lookupValue(const char *name, float &value) const {
   EXCEPTION_PROLOGUE;
-  if (LNode) {
+  if (dynamicConfig) {
+    value = (float) std::get<double>((*dynamicConfig).get().At(std::string(name)).GetValue());
+    return true;
+  } else if (LNode) {
     int i_value = 0;
     if (LNode->lookupValue(name, i_value)) {
       value = static_cast<float>(i_value);
@@ -393,7 +399,10 @@ bool CompoundConfigNode::lookupValue(const char *name, float &value) const {
 
 bool CompoundConfigNode::lookupValue(const char *name, const char *&value) const {
   EXCEPTION_PROLOGUE;
-  if (LNode) {
+  if (dynamicConfig) {
+    value = (char *) std::get<long long>((*dynamicConfig).get().At(std::string(name)).GetValue());
+    return true;
+  } else if (LNode) {
     if (LNode->lookupValue(name, value)) {
       std::string variableName(value);
       if (cConfig->getVariableRoot().exists(variableName)) {
@@ -420,7 +429,10 @@ bool CompoundConfigNode::lookupValue(const char *name, const char *&value) const
 
 bool CompoundConfigNode::lookupValue(const char *name, std::string &value) const {
   EXCEPTION_PROLOGUE;
-  if (LNode) {
+  if (dynamicConfig) {
+    value = std::get<std::string>((*dynamicConfig).get().At(std::string(name)).GetValue());
+    return true;
+  } else if (LNode) {
     if (LNode->lookupValue(name, value)) {
       std::string variableName(value);
       if (cConfig->getVariableRoot().exists(variableName)) {
