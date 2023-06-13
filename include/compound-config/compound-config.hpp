@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include<optional>
+
 #include <libconfig.h++>
 #include <yaml-cpp/yaml.h>
 #include <cassert>
@@ -46,8 +48,8 @@ class CompoundConfigNode
   YAML::Node YNode;
   CompoundConfig* cConfig = nullptr;
 
-  // TODO: Make this mem safe with references
-  structured_config::CCRet* dynamicConfig = nullptr;
+  // CompoundConfigNode can be initialized with a dummy CompoundConfig
+  std::optional<std::reference_wrapper<structured_config::CCRet>> dynamicConfig;
 
  public:
   CompoundConfigNode(){}
@@ -56,7 +58,7 @@ class CompoundConfigNode
 
   // necessary dynamic config return type. Creates a perfect copy of this node
   // with its dynamic element. Necessary for the operator 
-  CompoundConfigNode(libconfig::Setting* _lnode, YAML::Node _ynode, CompoundConfig* _cConfig, structured_config::CCRet* dynamicConfig);
+  CompoundConfigNode(libconfig::Setting* _lnode, YAML::Node _ynode, CompoundConfig* _cConfig, structured_config::CCRet& dynamicConfig);
 
   libconfig::Setting& getLNode() {return *LNode;}
   YAML::Node getYNode() {return YNode;}

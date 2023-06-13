@@ -41,13 +41,13 @@ class CCRet
     inline YAMLLiteral& GetValue()
     { return std::get<YAMLLiteral>(data_); } 
     // resolves a map CCRet
-    inline CCRet& At(const std::string& key) const
+    inline CCRet& At(const std::string& key)
     { return *std::get<YAMLMap>(data_).at(key); }
     // resolves a list CCRet
-    inline CCRet& At(YAMLVector::size_type index) const
+    inline CCRet& At(YAMLVector::size_type index)
     { return *std::get<YAMLVector>(data_).at(index); }
 
-    CCRet operator [](int idx) const;
+    CCRet& operator [](int idx);
 
     /** TYPE RESOLUTION **/
     // we do not need isArray as isArray is only used for LNode, which is bypassed

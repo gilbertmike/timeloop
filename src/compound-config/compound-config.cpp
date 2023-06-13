@@ -85,11 +85,14 @@ CompoundConfigNode::CompoundConfigNode(libconfig::Setting* _lnode, YAML::Node _y
   cConfig = _cConfig;
 }
 
-CompoundConfigNode::CompoundConfigNode(libconfig::Setting* _lnode, YAML::Node _ynode, CompoundConfig* _cConfig, structured_config::CCRet* _dynamicConfig) {
+CompoundConfigNode::CompoundConfigNode(libconfig::Setting* _lnode,
+                                       YAML::Node _ynode, 
+                                       CompoundConfig* _cConfig, 
+                                       structured_config::CCRet& _dynamicConfig
+                                      ) : dynamicConfig(_dynamicConfig) {
   LNode = _lnode;
   YNode = _ynode;
   cConfig = _cConfig;
-  dynamicConfig = _dynamicConfig;
 }
 
 CompoundConfigNode CompoundConfigNode::lookup(const char *path) const {
@@ -464,7 +467,7 @@ bool CompoundConfigNode::lookupArrayValue(const char* name, std::vector<std::str
 
 bool CompoundConfigNode::isList() const {
   if (dynamicConfig) {
-    return (*dynamicConfig).isList();
+    return (*dynamicConfig).get().isList();
   } else if(LNode) return LNode->isList();
   else if (YNode) {
     if (YNode.IsSequence()) {
@@ -513,8 +516,8 @@ CompoundConfigNode CompoundConfigNode::operator [](int idx) const {
 
   if (dynamicConfig) {
     // also need to be careful here as you don't know where this return value is going
-    structured_config::CCRet operatorEnd = (*dynamicConfig)[idx]; 
-    return CompoundConfigNode(nullptr, YAML::Node(), cConfig, &operatorEnd);
+    structured_config::CCRet& operatorEnd = (*dynamicConfig).get()[idx]; 
+    return CompoundConfigNode(nullptr, YAML::Node(), cConfig, operatorEnd);
   } else if(LNode) return CompoundConfigNode(&(*LNode)[idx], YAML::Node(), cConfig);
   else if (YNode) {
     auto yIter = YNode.begin();

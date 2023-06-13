@@ -12,11 +12,9 @@
 #include "compound-config/compound-config-struct.hpp"
 
 namespace structured_config {
-CCRet CCRet::operator [](int idx) const {
-  if (idx < 0) return CCRet();
-  else return CCRet();
-  // assert(isList());
+CCRet& CCRet::operator [](int idx) {
+  assert(isList());
 
-  // return At((YAMLVector::size_type) idx);
+  return At(idx);
 }
 }
