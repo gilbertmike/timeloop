@@ -87,7 +87,11 @@ CompoundConfigNode::CompoundConfigNode(libconfig::Setting* _lnode, YAML::Node _y
 
 CompoundConfigNode CompoundConfigNode::lookup(const char *path) const {
   EXCEPTION_PROLOGUE;
-  if (LNode) {
+  if (dynamicConfig) {
+    // need to treat this carefully on return or else we might brick the entire
+    // codebase. Not necessarily sure where this output is used.
+
+  } else if (LNode) {
     libconfig::Setting& nextNode = LNode->lookup(path);
     return CompoundConfigNode(&nextNode, YAML::Node(), cConfig);
   } else if (YNode) {
@@ -497,7 +501,10 @@ int CompoundConfigNode::getLength() const {
 
 CompoundConfigNode CompoundConfigNode::operator [](int idx) const {
   assert(isList() || isArray());
-  if(LNode) return CompoundConfigNode(&(*LNode)[idx], YAML::Node(), cConfig);
+
+  if (dynamicConfig) {
+    // also need to be careful here as you don't know where this return value is going
+  } else if(LNode) return CompoundConfigNode(&(*LNode)[idx], YAML::Node(), cConfig);
   else if (YNode) {
       auto yIter = YNode.begin();
       for (int i = 0; i < idx; i++) yIter++;
