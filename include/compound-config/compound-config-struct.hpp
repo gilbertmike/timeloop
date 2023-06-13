@@ -16,7 +16,7 @@ class CCRet; // forward definition
 
 // Literal value types possible in a YAML file
 using YAMLLiteral = std::variant<
-  std::string, int, float, bool
+  std::string, long long, double, bool
 >;
 // YAML vector representation
 using YAMLVector = std::vector<std::unique_ptr<CCRet>>;

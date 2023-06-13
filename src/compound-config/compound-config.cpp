@@ -154,7 +154,10 @@ bool CompoundConfigNode::lookupValue(const char *name, bool &value) const {
 
 bool CompoundConfigNode::lookupValue(const char *name, int &value) const {
   EXCEPTION_PROLOGUE;
-  if (LNode) {
+  if (dynamicConfig) {
+    value = (int) std::get<long long>((*dynamicConfig).get().At(std::string(name)).GetValue());
+    return true;
+  } else if (LNode) {
     if (!LNode->lookupValue(name, value)) {
       std::string variableName;
       if (LNode->lookupValue(name, variableName) &&
@@ -187,7 +190,10 @@ bool CompoundConfigNode::lookupValue(const char *name, int &value) const {
 
 bool CompoundConfigNode::lookupValue(const char *name, unsigned int &value) const {
   EXCEPTION_PROLOGUE;
-  if (LNode) {
+  if (dynamicConfig) {
+    value = (unsigned int) std::get<long long>((*dynamicConfig).get().At(std::string(name)).GetValue());
+    return true;
+  } else if (LNode) {
     if (!LNode->lookupValue(name, value)) {
       std::string variableName;
       if (LNode->lookupValue(name, variableName) &&
