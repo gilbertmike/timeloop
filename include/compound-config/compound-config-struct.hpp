@@ -112,7 +112,6 @@ class CCRet
       return ret;
     }
 
-  private:
     CCRet() : data_() {}
 };
 }
