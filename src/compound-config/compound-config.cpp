@@ -526,7 +526,8 @@ bool CompoundConfigNode::isList() const {
 }
 
 bool CompoundConfigNode::isArray() const {
-  if(LNode) return LNode->isArray();
+  if (dynamicConfig) return (*dynamicConfig).get().isList();
+  else if(LNode) return LNode->isArray();
   else if (YNode) return YNode.IsSequence() && YNode[0].IsScalar();
   else {
     assert(false);
@@ -535,7 +536,8 @@ bool CompoundConfigNode::isArray() const {
 }
 
 bool CompoundConfigNode::isMap() const {
-  if(LNode) return LNode->isGroup();
+  if (dynamicConfig) return (*dynamicConfig).get().isMap();
+  else if(LNode) return LNode->isGroup();
   else if (YNode) return YNode.IsMap();
   else {
     assert(false);
@@ -545,7 +547,8 @@ bool CompoundConfigNode::isMap() const {
 
 
 int CompoundConfigNode::getLength() const {
-  if(LNode) return LNode->getLength();
+  if (dynamicConfig) return (*dynamicConfig).get().Size();
+  else if(LNode) return LNode->getLength();
   else if (YNode) return YNode.size();
   else {
     assert(false);
