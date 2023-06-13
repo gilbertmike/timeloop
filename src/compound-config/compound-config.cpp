@@ -577,7 +577,17 @@ CompoundConfigNode CompoundConfigNode::operator [](int idx) const {
 }
 
 bool CompoundConfigNode::getArrayValue(std::vector<std::string> &vectorValue) {
-  if (LNode) {
+  if (dynamicConfig) {
+    structured_config::CCRet& node = (*dynamicConfig).get();
+    assert(node.isList());
+
+    for (int i = 0; (size_t) i < node.Size(); i++) 
+    {
+      vectorValue.push_back(std::get<std::string>(node.At(i).GetValue()));
+    }
+
+    return true;
+  } else if (LNode) {
     assert(isArray());
     for (const std::string m: *LNode)
     {
