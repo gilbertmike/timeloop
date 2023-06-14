@@ -1,4 +1,6 @@
 #define BOOST_TEST_MODULE TestCompoundConfig
+
+#include <iostream>
 #include <boost/test/included/unit_test.hpp>
 #include <compound-config/compound-config.hpp>
 
@@ -21,7 +23,8 @@ namespace config {
 // tests the lookup functions when reading in from file
 BOOST_AUTO_TEST_CASE(testLookups)
 {
-    for (auto FILE:FILES) 
+    // goes through all testing files
+    for (std::string FILE:FILES) 
     {
         // reads the YAML file into CompoundConfig
         CompoundConfig cConfig = CompoundConfig(FILE, "yaml");
@@ -43,6 +46,11 @@ BOOST_AUTO_TEST_CASE(testLookups)
             // unpacks actual value
             std::string actual;
             root.lookupValue(key, actual);
+            
+            // prints out items so I know what they are
+            std::cout << "key: " << key << std::endl;
+            std::cout << "actual: " << actual << std::endl;
+            std::cout << "expected: " << expected << std::endl;
 
             // compares to the config
             BOOST_CHECK_EQUAL(actual, expected);
