@@ -21,7 +21,7 @@ std::vector<std::string> FILES = {
 // we are only testing things in config
 namespace config {
 // tests the lookup functions when reading in from file
-BOOST_AUTO_TEST_CASE(testLookups)
+BOOST_AUTO_TEST_CASE(testStaticLookups)
 {
     // goes through all testing files
     for (std::string FILE:FILES) 
@@ -59,14 +59,14 @@ BOOST_AUTO_TEST_CASE(testLookups)
 }
 
 // tests the ability to set correctly
-BOOST_AUTO_TEST_CASE(testDynamics)
+BOOST_AUTO_TEST_CASE(testSetters)
 {
-
+    std::cout << "not yet implemented" << std::endl;
 }
 
 // tests the ability to read out correctly from sets
-BOOST_AUTO_TEST_CASE(testLookupDynamics)
+BOOST_AUTO_TEST_CASE(testDynamicLookups)
 {
-
+    std:: cout << "not yet implemented" << std::endl;
 }
 } // namespace config
