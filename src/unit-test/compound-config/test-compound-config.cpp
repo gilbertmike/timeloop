@@ -4,6 +4,17 @@
 #include <boost/test/included/unit_test.hpp>
 #include <compound-config/compound-config.hpp>
 
+// makes sure for a certain type CCN agrees with YNode
+template <typename T>
+bool testScalarLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, std::string& key)
+{
+    T expectedScalar = YNode[key].as<T>();
+    T actualScalar;
+    CNode.lookupValue(key, actualScalar);
+
+    return expectedScalar == actualScalar;
+}
+
 // number of testing cycles to run
 int TESTS = 2000;
 // the seed for the entropy source
@@ -11,6 +22,9 @@ uint SEED = 42;
 // changes the max random value to the U_LONG32 random value
 #undef RAND_MAX
 #define RAND_MAX = ULONG_LONG_MAX
+
+// the location of the test files
+std::string TEST_LOC = "../unit-test/compound-config/tests/";
 
 // static YAML file names we want to load in for the test
 std::vector<std::string> FILES = {
@@ -27,9 +41,9 @@ BOOST_AUTO_TEST_CASE(testStaticLookups)
     for (std::string FILE:FILES) 
     {
         // reads the YAML file into CompoundConfig
-        CompoundConfig cConfig = CompoundConfig(FILE, "yaml");
+        CompoundConfig cConfig = CompoundConfig(TEST_LOC + FILE, "yaml");
         // reads in the YAML file independently of CompoundConfig
-        YAML::Node testRef = YAML::LoadFile(FILE);
+        YAML::Node testRef = YAML::LoadFile(TEST_LOC + FILE);
 
         // gets the root CompoundConfigNode
         config::CompoundConfigNode root = cConfig.getRoot();
@@ -52,8 +66,33 @@ BOOST_AUTO_TEST_CASE(testStaticLookups)
             std::cout << "actual: " << actual << std::endl;
             std::cout << "expected: " << expected << std::endl;
 
-            // compares to the config
+            // compares to the config in a string format
             BOOST_CHECK_EQUAL(actual, expected);
+
+            // tests all other lookup types besides string
+            switch(node.Type())
+            {
+                // null should pull out the same thing as scalar
+                case YAML::NodeType::Null:
+                // tests all possible scalar output values
+                case YAML::NodeType::Scalar:
+                    BOOST_CHECK(testScalarLookup<bool>(root, node, key));
+                    BOOST_CHECK(testScalarLookup<double>(root, node, key));
+                    BOOST_CHECK(testScalarLookup<long long>(root, node, key));
+                    BOOST_CHECK(testScalarLookup<std::string>(root, node, key));
+                    break;
+                case YAML::NodeType::Sequence:
+                    break;
+                case YAML::NodeType::Map:
+                    break;
+                case YAML::NodeType::Undefined:
+                    break;
+                default:
+                    throw std::runtime_error(
+                        std::string("Wrong YAML FORMAT: ") + FILE
+                    );
+                    break;
+            }
         }
     }
 }
