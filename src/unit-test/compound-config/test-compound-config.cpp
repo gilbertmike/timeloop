@@ -34,7 +34,7 @@ std::map<std::string, std::vector<std::string>> FILES = {
 
 // makes sure for a certain type CCN agrees with YNode
 template <typename T>
-bool testScalarLookup(const config::CompoundConfigNode& CNode, const YAML::Node& YNode, const std::string& key)
+bool testScalarLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, const std::string& key)
 {
     T expectedScalar = YNode[key].as<T>();
     T actualScalar;
@@ -44,7 +44,7 @@ bool testScalarLookup(const config::CompoundConfigNode& CNode, const YAML::Node&
 }
 
 // makes sure sequences agree in CCN and YNode
-bool testSequenceLookup(const config::CompoundConfigNode& CNode, const YAML::Node& YNode, const std::string& key)
+bool testSequenceLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, const std::string& key)
 {
     std::vector<std::string> expectedSeq = YNode[key].as<std::vector<std::string>>();
     std::vector<std::string> actualSeq;
@@ -53,8 +53,18 @@ bool testSequenceLookup(const config::CompoundConfigNode& CNode, const YAML::Nod
     return expectedSeq == actualSeq;
 }
 
-// tests the CCN lookup functions provided a given root node. Treats all nodes as maps.
-bool testMapLookup(const config::CompoundConfigNode& CNode, const YAML::Node&YNode)
+// forward declaration
+bool testMapLookup(config::CompoundConfigNode& CNode, YAML::Node&YNode);
+// accesses the key for a map because C++ dislikes things not being owned by other things
+bool testMapLookup(config::CompoundConfigNode& CNode, YAML::Node&YNode, const std::string& key)
+{
+    auto nextCNode = CNode.lookup(key);
+    auto nextYNode = YNode[key];
+    return testMapLookup(CNode, YNode);
+}
+
+// tests the CCN lookup functions provided a given root node. Treats all input nodes as maps.
+bool testMapLookup(config::CompoundConfigNode& CNode, YAML::Node&YNode)
 {
     // defines return value namespace
     bool ret = true;
@@ -65,21 +75,23 @@ bool testMapLookup(const config::CompoundConfigNode& CNode, const YAML::Node&YNo
         // whether or not comparison at this node has passed
         bool nodePass = false;
         // extracts the key
-        std::string key = nodeIterVal.first.as<std::string>();
+        const std::string key = nodeIterVal.first.as<std::string>();
 
-        // tests all lookups with generic functions based on YAML type
-        switch(nodeIterVal.Type())
+        // tests all lookups with generic functions based on the YAMLType of the YAML map value
+        switch(nodeIterVal.second.Type())
         {
             // null should pull out the same thing as scalar
             case YAML::NodeType::Null:
             // tests all possible scalar output values
             case YAML::NodeType::Scalar:
                 // tests precision values
+                std::cout << "\t\tNow testing precision values" << std::endl;
                 BOOST_CHECK(nodePass = nodePass && testScalarLookup<double>(CNode, YNode, key));
                 BOOST_CHECK(nodePass = nodePass && testScalarLookup<bool>(CNode, YNode, key));
                 BOOST_CHECK(nodePass = nodePass && testScalarLookup<int>(CNode, YNode, key));
                 BOOST_CHECK(nodePass = nodePass && testScalarLookup<unsigned int>(CNode, YNode, key));
                 // implicitly tests the lookupValueLongOnly
+                std::cout << "\t\tNow testing long longs" << std::endl;
                 BOOST_CHECK(nodePass = nodePass && testScalarLookup<long long>(CNode, YNode, key));
                 BOOST_CHECK(nodePass = nodePass && testScalarLookup<unsigned long long>(CNode, YNode, key));
                 // tests floating point values
@@ -94,10 +106,12 @@ bool testMapLookup(const config::CompoundConfigNode& CNode, const YAML::Node&YNo
                 BOOST_CHECK(nodePass = testSequenceLookup(CNode, YNode, key));
                 break;
             case YAML::NodeType::Map:
-                BOOST_CHECK(nodePass = testMapLookup(CNode.lookup(key), YNode[key]));
+                BOOST_CHECK(nodePass = testMapLookup(CNode, YNode, key));
                 break;
             case YAML::NodeType::Undefined:
-
+                throw std::runtime_error(
+                    std::string("None of our files should contain undefineds")
+                );
                 break;
             default:
                 throw std::runtime_error(
@@ -116,22 +130,29 @@ namespace config {
 // tests the lookup functions when reading in from file
 BOOST_AUTO_TEST_CASE(testStaticLookups)
 {
+    // marker for test
+    std::cout << "Beginning Static Lookups Test:\n---" << std::endl;
     // goes through all testing dirs
     for (auto FILEPATH:FILES) 
     {
+        // calculates DIR relative location and extracts file's name
         std::string DIR = TEST_LOC + FILEPATH.first;
         std::vector<std::string> FILENAMES = FILEPATH.second;
 
         for (std::string FILE:FILENAMES)
         {
-
-            // reads the YAML file into CompoundConfig
-            CompoundConfig cConfig = CompoundConfig(DIR + FILE, "yaml");
-            // reads in the YAML file independently of CompoundConfig
-            YAML::Node testRef = YAML::LoadFile(DIR + FILE);
+            // calculates filepath
+            std::string FILEPATH = DIR + FILE;
+            // debug printing info
+            std::cout << "Now testing: " + FILEPATH << std::endl;
+            // reads the YAML file into CompoundConfig and gets root
+            CompoundConfig cConfig = CompoundConfig({FILEPATH});
+            CompoundConfigNode root = cConfig.getRoot();
+            // reads in the YAML file independently of CompoundConfig to serve as test reference
+            YAML::Node ref = YAML::LoadFile(FILEPATH);
 
             // tests the entire file
-            testMapLookup(cConfig.getRoot(), testRef);
+            testMapLookup(root, ref);
         }
     }
 }
