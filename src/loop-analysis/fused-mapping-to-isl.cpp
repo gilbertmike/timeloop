@@ -1,6 +1,7 @@
 #include "loop-analysis/isl-ir.hpp"
 #include "loop-analysis/temporal-analysis.hpp"
 #include "isl-wrapper/ctx-manager.hpp"
+#include "isl-wrapper/isl-functions.hpp"
 
 #include <barvinok/isl.h>
 
@@ -97,11 +98,13 @@ OccupanciesFromMapping(mapping::FusedMapping& mapping,
     }
 
     auto accesses = *accesses_opt;
-    auto occupancy = skew.apply_range(
+    auto occupancy = skew.map.apply_range(
       isl::project_dim_in_after(tiling.apply_range(accesses),
                                 isl::dim(skew.map, isl_dim_out))
     );
-    occupancies.emplace(std::make_pair(buf, std::move(occupancy)));
+    occupancies.emplace(std::make_pair(buf,
+                                       Occupancy(skew.dim_in_tags,
+                                                 std::move(occupancy))));
   }
 
   return occupancies;
@@ -576,12 +579,9 @@ LogicalBufSkews LogicalBufSkewsFromMapping(mapping::FusedMapping& mapping)
               cur_has_spatial = true;
             }
 
-            auto buffer = LogicalBuffer(node.buffer,
-                                        node.dspace,
-                                        GetNodeId(leaf));
             skews.emplace(std::make_pair(
-              std::move(buffer),
-              TaggedMap<isl::map, spacetime::Dimension>(map, tags)
+              LogicalBuffer(node.buffer, node.dspace, GetNodeId(leaf)),
+              Skew(tags, map)
             ));
           } else if constexpr (mapping::IsLoopV<NodeT>)
           {

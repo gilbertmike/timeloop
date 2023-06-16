@@ -75,15 +75,16 @@ OccupanciesFromMapping(const loop::Nest& mapping,
   LogicalBufOccupancies result;
   for (auto& [buf, skew] : buf_skew)
   {
+    auto occupancy = skew.map.apply_range(
+      isl::project_dim_in_after(
+        branch_tiling.apply_range(ops_to_dspace.at(buf.dspace_id)),
+        isl::dim(skew.map, isl_dim_out)
+      )
+    );
     result.emplace(std::make_pair(
       buf,
-      skew.apply_range(
-        isl::project_dim_in_after(
-          branch_tiling.apply_range(ops_to_dspace.at(buf.dspace_id)),
-          isl::dim(skew.map, isl_dim_out)
-        )
-      )
-    ));
+      Occupancy(skew.dim_in_tags, std::move(occupancy)))
+    );
   }
 
   return result;
@@ -184,6 +185,44 @@ LogicalBufSkewsFromMapping(const loop::Nest& nest,
   {
     auto spacetime_dim = loop_it->spacetime_dimension;
 
+    auto is_boundary =
+      tiling_boundaries.find(timeloop_loop_idx) != tiling_boundaries.end();
+    if (is_boundary)
+    {
+      if (arch_spatial_levels == 0)  // i.e., no x loop between last and this
+      {
+        p_aff = isl_aff_zero_on_domain_space(isl_space_copy(p_domain_space));
+        p_aff_list = isl_aff_list_add(p_aff_list, p_aff);
+        aff_list_size++;
+        tags.emplace_back(spacetime::Dimension::SpaceX);
+        arch_spatial_levels = 1;
+      }
+      if (arch_spatial_levels == 1)  // i.e., no x loop between last and this
+      {
+        p_aff = isl_aff_zero_on_domain_space(isl_space_copy(p_domain_space));
+        p_aff_list = isl_aff_list_add(p_aff_list, p_aff);
+        aff_list_size++;
+        tags.emplace_back(spacetime::Dimension::SpaceY);
+        arch_spatial_levels = 0;
+      }
+
+      auto p_map = isl_map_from_basic_map(
+        isl_basic_map_from_aff_list(isl_space_copy(p_domain_space),
+                                    isl_aff_list_copy(p_aff_list))
+      );
+      auto map = isl::manage(p_map).reverse();
+
+      std::cout << "arch(" << arch_level << "): " << map << std::endl;
+      std::cout << "loop_idx: " << loop_idx << std::endl;
+      for (const auto& [dspace_id, _] : workload.GetShape()->DataSpaceIDToName)
+      {
+        result.emplace(std::make_pair(LogicalBuffer(arch_level, dspace_id, 0),
+                                      Skew(tags, map)));
+      }
+
+      ++arch_level;
+    }
+
     if (spacetime_dim == spacetime::Dimension::Time)
     {
       p_aff = isl_aff_zero_on_domain_space(isl_space_copy(p_domain_space));
@@ -265,46 +304,49 @@ LogicalBufSkewsFromMapping(const loop::Nest& nest,
       arch_spatial_levels = 2;
     }
 
-    auto is_boundary =
-      tiling_boundaries.find(timeloop_loop_idx) == tiling_boundaries.end();
-    if (is_boundary || timeloop_loop_idx == 0)
-    {
-      if (arch_spatial_levels == 0)  // i.e., no x loop between last and this
-      {
-        p_aff = isl_aff_zero_on_domain_space(isl_space_copy(p_domain_space));
-        p_aff_list = isl_aff_list_add(p_aff_list, p_aff);
-        aff_list_size++;
-        tags.emplace_back(spacetime::Dimension::SpaceX);
-        arch_spatial_levels = 1;
-      }
-      if (arch_spatial_levels == 1)  // i.e., no x loop between last and this
-      {
-        p_aff = isl_aff_zero_on_domain_space(isl_space_copy(p_domain_space));
-        p_aff_list = isl_aff_list_add(p_aff_list, p_aff);
-        aff_list_size++;
-        tags.emplace_back(spacetime::Dimension::SpaceY);
-        arch_spatial_levels = 0;
-      }
-
-      auto p_map = isl_map_from_basic_map(
-        isl_basic_map_from_aff_list(isl_space_copy(p_domain_space),
-                                    isl_aff_list_copy(p_aff_list))
-      );
-      auto map = isl::manage(p_map).reverse();
-
-      for (const auto& [dspace_id, _] : workload.GetShape()->DataSpaceIDToName)
-      {
-        result.emplace(std::make_pair(
-          LogicalBuffer(arch_level, dspace_id, 0),
-          TaggedMap<isl::map, spacetime::Dimension>(map, tags)
-        ));
-      }
-
-      ++arch_level;
-    }
-
     loop_idx++;
     timeloop_loop_idx--;
+  }
+
+  // The compute level happens after the last loop.
+  if (timeloop_loop_idx != -1)
+  {
+    throw std::logic_error(
+      "compute should be at the innermost level, but "
+      + std::to_string(timeloop_loop_idx)
+    );
+  }
+  if (arch_spatial_levels == 0)  // i.e., no x loop between last and this
+  {
+    p_aff = isl_aff_zero_on_domain_space(isl_space_copy(p_domain_space));
+    p_aff_list = isl_aff_list_add(p_aff_list, p_aff);
+    aff_list_size++;
+    tags.emplace_back(spacetime::Dimension::SpaceX);
+    arch_spatial_levels = 1;
+  }
+  if (arch_spatial_levels == 1)  // i.e., no y loop between last and this
+  {
+    p_aff = isl_aff_zero_on_domain_space(isl_space_copy(p_domain_space));
+    p_aff_list = isl_aff_list_add(p_aff_list, p_aff);
+    aff_list_size++;
+    tags.emplace_back(spacetime::Dimension::SpaceY);
+    arch_spatial_levels = 0;
+  }
+
+  auto p_map = isl_map_from_basic_map(
+    isl_basic_map_from_aff_list(isl_space_copy(p_domain_space),
+                                isl_aff_list_copy(p_aff_list))
+  );
+  auto map = isl::manage(p_map).reverse();
+
+  std::cout << "arch(" << arch_level << "): " << map << std::endl;
+  std::cout << "loop_idx: " << loop_idx << std::endl;
+  for (const auto& [dspace_id, _] : workload.GetShape()->DataSpaceIDToName)
+  {
+    result.emplace(std::make_pair(
+      LogicalBuffer(arch_level, dspace_id, 0),
+      Skew(tags, map)
+    ));
   }
 
   isl_space_free(p_domain_space);

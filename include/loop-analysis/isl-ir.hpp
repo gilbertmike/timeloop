@@ -15,7 +15,6 @@
 #include <isl/cpp.h>
 #include <variant>
 
-#include "isl-wrapper/tagged.hpp"
 #include "mapping/fused-mapping.hpp"
 #include "mapping/mapping.hpp"
 #include "workload/workload.hpp"
@@ -123,16 +122,26 @@ using LogicalBufDataDistributions = std::map<LogicalBuffer, DataDistribution>;
  * The default is inferred from the mapping.
  * 
  */
-using Skew = TaggedMap<isl::map, spacetime::Dimension>;
-using LogicalBufSkews = std::map<LogicalBuffer, Skew>;
+struct Skew
+{
+  std::vector<spacetime::Dimension> dim_in_tags;
+  isl::map map;
+
+  Skew(const std::vector<spacetime::Dimension>& dim_in_tags, isl::map map);
+};
 
 /**
  * @brief Space-Time -> Data of a logical buffer. A complete description of
  *        data held in a logical buffer.
- * 
  */
-using Occupancy = TaggedMap<isl::map, spacetime::Dimension>;
-using LogicalBufOccupancies = std::map<LogicalBuffer, Occupancy>;
+struct Occupancy
+{
+  std::vector<spacetime::Dimension> dim_in_tags;
+  isl::map map;
+
+  Occupancy(const std::vector<spacetime::Dimension>& dim_in_tags,
+            isl::map map);
+};
 
 /**
  * @brief TARDIS-style X-relation.
@@ -141,12 +150,30 @@ using LogicalBufOccupancies = std::map<LogicalBuffer, Occupancy>;
  *   - To calculate access counts which is passed to the uarch model
  *   - As input to TARDIS for code-gen
  */
-using Transfers = TaggedMap<isl::map, spacetime::Dimension>;
-using LogicalBufTransfers = std::map<std::pair<LogicalBuffer, LogicalBuffer>,
-                                     Transfers>;
+struct Transfers
+{
+  std::vector<spacetime::Dimension> dim_in_tags;
+  isl::map map;
 
-using Fill = TaggedMap<isl::map, spacetime::Dimension>;
-using LogicalBufFills = std::map<LogicalBuffer, Fill>;
+  Transfers(const std::vector<spacetime::Dimension>& dim_in_tags,
+            isl::map map);
+};
+
+struct Fill
+{
+  std::vector<spacetime::Dimension> dim_in_tags;
+  isl::map map;
+
+  Fill(const std::vector<spacetime::Dimension>& dim_in_tags, isl::map map);
+};
+
+struct Reads
+{
+  std::vector<spacetime::Dimension> dim_in_tags;
+  isl::map map;
+
+  Reads(const std::vector<spacetime::Dimension>& dim_in_tags, isl::map map);
+}
 
 /******************************************************************************
  * Converter from mapping to intermediate representation
@@ -179,4 +206,4 @@ LogicalBufOccupancies
 OccupanciesFromMapping(const loop::Nest& nest,
                        const problem::Workload& workload);
 
-};
+};  // namespace analysis

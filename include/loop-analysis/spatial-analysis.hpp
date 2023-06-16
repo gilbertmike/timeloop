@@ -11,28 +11,35 @@ namespace analysis
 
 struct LinkTransferInfo
 {
-  LogicalBufTransfers link_transfers;
-  LogicalBufFills unfulfilled_fills;
+  Transfers link_transfer;
+  Fill unfulfilled_fill;
 };
 
 struct LinkTransferModel
 {
-  virtual LinkTransferInfo
-  Apply(LogicalBufFills&, LogicalBufOccupancies&) const = 0;
+  virtual LinkTransferInfo Apply(const Fill&, const Occupancy&) const = 0;
 };
 
 struct MulticastInfo
 {
-  std::map<LogicalBuffer, isl::map> reads;
-  std::map<LogicalBuffer, isl_pw_qpolynomial*> p_hops;
+  isl::map reads;
+  isl_pw_qpolynomial* p_hops;
+
+  /***************** Compatibility with Timeloop v2.0 ************************/
+  struct AccessStats
+  {
+    double accesses;
+    double hops;
+  };
+  std::map<std::pair<uint64_t, uint64_t>, AccessStats> compat_access_stats;
+  /***************************************************************************/
 
   ~MulticastInfo();
 };
 
 struct MulticastModel
 {
-  virtual MulticastInfo
-  Apply(LogicalBufFills&, LogicalBufOccupancies&) const = 0;
+  virtual MulticastInfo Apply(const Fill&) const = 0;
 };
 
 struct SpatialReuseInfo
@@ -41,33 +48,49 @@ struct SpatialReuseInfo
   MulticastInfo multicast_info;
 };
 
-SpatialReuseInfo SpatialReuseAnalysis(LogicalBufFills&,
-                                      LogicalBufOccupancies&,
-                                      const LinkTransferModel&,
-                                      const MulticastModel&);
+struct SpatialReuseAnalysisInput
+{
+  const LogicalBuffer& buf;
+  const Fill& children_fill;
+  const Occupancy& children_occupancy;
+
+  SpatialReuseAnalysisInput(const LogicalBuffer&,
+                            const Fill&,
+                            const Occupancy&);
+};
+
+struct SpatialReuseModels
+{
+  const LinkTransferModel& link_transfer_model;
+  const MulticastModel& multicast_model;
+
+  SpatialReuseModels(const LinkTransferModel&, const MulticastModel&);
+};
+
+SpatialReuseInfo SpatialReuseAnalysis(SpatialReuseAnalysisInput input,
+                                      SpatialReuseModels models);
 
 /******************************************************************************
- * Concrete Classes
+ * Model Classes
  *****************************************************************************/
 
 /**
- * @brief A link transfer model for 1- or 2-dimensional mesh interconnect.
+ * @brief A link transfer model for 2-dimensional mesh interconnect.
  */
 class SimpleLinkTransferModel : public LinkTransferModel
 {
  public:
-  SimpleLinkTransferModel(size_t n_spatial_dims);
+  SimpleLinkTransferModel();
 
   LinkTransferInfo
-  Apply(LogicalBufFills& fills, LogicalBufOccupancies& occupancies) const;
+  Apply(const Fill& fills, const Occupancy& occupancies) const;
 
  private:
-  size_t n_spatial_dims_;
   isl::map connectivity_;
 };
 
 /**
- * @brief A multicast model for 1- or 2-dimensional array.
+ * @brief A multicast model for 2-dimensional array.
  *
  * @note Differs from Timeloop's original multicast model in terms of partial
  *   tile overlap multicast. This model assumes partial overlaps can benefit
@@ -79,13 +102,11 @@ class SimpleLinkTransferModel : public LinkTransferModel
 class SimpleMulticastModel : public MulticastModel
 {
  public:
-  SimpleMulticastModel(size_t n_spatial_dims);
+  SimpleMulticastModel();
 
-  MulticastInfo
-  Apply(LogicalBufFills& fills, LogicalBufOccupancies& occupancies) const;
+  MulticastInfo Apply(const Fill& fills) const;
 
  private:
-  size_t n_spatial_dims_;
   isl::map connectivity_;
 };
 }
