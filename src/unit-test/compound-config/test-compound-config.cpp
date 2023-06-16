@@ -15,6 +15,15 @@ bool testScalarLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, std:
     return expectedScalar == actualScalar;
 }
 
+bool testSequenceLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, std::string& key)
+{
+    std::vector<std::string> expectedSeq = YNode[key].as<std::vector<std::string>>();
+    std::vector<std::string> actualSeq;
+    CNode.lookupArrayValue(key, actualSeq);
+
+    return expectedSeq == actualSeq;
+}
+
 // number of testing cycles to run
 int TESTS = 2000;
 // the seed for the entropy source
@@ -52,33 +61,29 @@ BOOST_AUTO_TEST_CASE(testStaticLookups)
         // figure this out. you may need a helper file.
         for (auto node: testRef)
         {
-            // unpacks the key + expected value
-            std::string key, expected;
-            key = node.first.as<std::string>();
-            expected = node.second.as<std::string>();
+            // extracts the key
+            std::string key = node.first.as<std::string>();
 
-            // unpacks actual value
-            std::string actual;
-            root.lookupValue(key, actual);
-            
-            // prints out items so I know what they are
-            std::cout << "key: " << key << std::endl;
-            std::cout << "actual: " << actual << std::endl;
-            std::cout << "expected: " << expected << std::endl;
-
-            // compares to the config in a string format
-            BOOST_CHECK_EQUAL(actual, expected);
-
-            // tests all other lookup types besides string
+            // tests all lookups with generic functions based on YAML type
             switch(node.Type())
             {
                 // null should pull out the same thing as scalar
                 case YAML::NodeType::Null:
                 // tests all possible scalar output values
                 case YAML::NodeType::Scalar:
-                    BOOST_CHECK(testScalarLookup<bool>(root, node, key));
+                    // tests precision values
                     BOOST_CHECK(testScalarLookup<double>(root, node, key));
+                    BOOST_CHECK(testScalarLookup<bool>(root, node, key));
+                    BOOST_CHECK(testScalarLookup<int>(root, node, key));
+                    BOOST_CHECK(testScalarLookup<unsigned int>(root, node, key));
+                    // implicitly tests the lookupValueLongOnly
                     BOOST_CHECK(testScalarLookup<long long>(root, node, key));
+                    BOOST_CHECK(testScalarLookup<unsigned long long>(root, node, key));
+                    // tests floating point values
+                    BOOST_CHECK(testScalarLookup<double>(root, node, key));
+                    BOOST_CHECK(testScalarLookup<float>(root, node, key));
+                    // tests strings
+                    BOOST_CHECK(testScalarLookup<const char*>(root, node, key));
                     BOOST_CHECK(testScalarLookup<std::string>(root, node, key));
                     break;
                 case YAML::NodeType::Sequence:
