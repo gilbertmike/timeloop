@@ -16,8 +16,20 @@ uint SEED = 42;
 std::string TEST_LOC = "../unit-test/compound-config/tests/";
 
 // static YAML file names we want to load in for the test
-std::vector<std::string> FILES = {
-    "example.yaml" // include source here if pulled from a repo somewhere
+std::map<std::string, std::vector<std::string>> FILES = {
+    // https://github.com/Accelergy-Project/timeloop-accelergy-exercises
+    {
+        "accelergy-project/2020.ispass/timeloop/01/", {
+            "1level.arch.yaml",
+            "conv1d-1level.map.yaml",
+            "conv1d.prob.yaml",
+            "timeloop-model.ART_summary.yaml",
+            "timeloop-model.ART.yaml",
+            "timeloop-model.ERT_summary.yaml",
+            "timeloop-model.ERT.yaml",
+            "timeloop-model.flattened_architecture.yaml",
+        }
+    }
 };
 
 // makes sure for a certain type CCN agrees with YNode
@@ -103,16 +115,23 @@ namespace config {
 // tests the lookup functions when reading in from file
 BOOST_AUTO_TEST_CASE(testStaticLookups)
 {
-    // goes through all testing files
-    for (std::string FILE:FILES) 
+    // goes through all testing dirs
+    for (auto FILEPATH:FILES) 
     {
-        // reads the YAML file into CompoundConfig
-        CompoundConfig cConfig = CompoundConfig(TEST_LOC + FILE, "yaml");
-        // reads in the YAML file independently of CompoundConfig
-        YAML::Node testRef = YAML::LoadFile(TEST_LOC + FILE);
+        std::string DIR = TEST_LOC + FILEPATH.first;
+        std::vector<std::string> FILENAMES = FILEPATH.second;
 
-        // tests the entire namespace
-        testMapLookup(cConfig.getRoot(), testRef);
+        for (std::string FILE:FILENAMES)
+        {
+
+            // reads the YAML file into CompoundConfig
+            CompoundConfig cConfig = CompoundConfig(DIR + FILE, "yaml");
+            // reads in the YAML file independently of CompoundConfig
+            YAML::Node testRef = YAML::LoadFile(TEST_LOC + FILE);
+
+            // tests the entire file
+            testMapLookup(cConfig.getRoot(), testRef);
+        }
     }
 }
 
