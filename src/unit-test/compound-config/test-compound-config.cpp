@@ -4,6 +4,22 @@
 #include <boost/test/included/unit_test.hpp>
 #include <compound-config/compound-config.hpp>
 
+// number of testing cycles to run
+int TESTS = 2000;
+// the seed for the entropy source
+uint SEED = 42;
+// changes the max random value to the U_LONG32 random value
+#undef RAND_MAX
+#define RAND_MAX = ULONG_LONG_MAX
+
+// the location of the test files
+std::string TEST_LOC = "../unit-test/compound-config/tests/";
+
+// static YAML file names we want to load in for the test
+std::vector<std::string> FILES = {
+    "example.yaml" // include source here if pulled from a repo somewhere
+};
+
 // makes sure for a certain type CCN agrees with YNode
 template <typename T>
 bool testScalarLookup(const config::CompoundConfigNode& CNode, const YAML::Node& YNode, const std::string& key)
@@ -81,22 +97,6 @@ bool testMapLookup(const config::CompoundConfigNode& root, const YAML::Node&YNod
 
     return ret;
 }
-// number of testing cycles to run
-int TESTS = 2000;
-// the seed for the entropy source
-uint SEED = 42;
-// changes the max random value to the U_LONG32 random value
-#undef RAND_MAX
-#define RAND_MAX = ULONG_LONG_MAX
-
-// the location of the test files
-std::string TEST_LOC = "../unit-test/compound-config/tests/";
-
-// static YAML file names we want to load in for the test
-std::vector<std::string> FILES = {
-    "example.yaml" // include source here if pulled from a repo somewhere
-};
-
 
 // we are only testing things in config
 namespace config {
