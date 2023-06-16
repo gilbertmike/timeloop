@@ -60,7 +60,7 @@ bool testMapLookup(config::CompoundConfigNode& CNode, YAML::Node&YNode, const st
 {
     auto nextCNode = CNode.lookup(key);
     auto nextYNode = YNode[key];
-    return testMapLookup(CNode, YNode);
+    return testMapLookup(nextCNode, nextYNode);
 }
 
 // tests the CCN lookup functions provided a given root node. Treats all input nodes as maps.
