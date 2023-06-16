@@ -53,7 +53,7 @@ LogicalBufTiling
 LogicalBufTilingFromMapping(const loop::Nest& nest,
                             const problem::Workload& workload);
 
-LogicalBufSkews
+std::map<LogicalBuffer, Skew>
 LogicalBufSkewsFromMapping(const loop::Nest& mapping,
                            const problem::Workload& workload);
 
@@ -64,7 +64,7 @@ OpsToDSpaceFromEinsum(const problem::Workload& workload);
  * Global function implementations
  *****************************************************************************/
 
-LogicalBufOccupancies
+std::map<LogicalBuffer, Occupancy>
 OccupanciesFromMapping(const loop::Nest& mapping,
                        const problem::Workload& workload)
 {
@@ -72,7 +72,7 @@ OccupanciesFromMapping(const loop::Nest& mapping,
   auto branch_tiling = TilingFromMapping(mapping).at(0);
   auto buf_skew = LogicalBufSkewsFromMapping(mapping, workload);
 
-  LogicalBufOccupancies result;
+  std::map<LogicalBuffer, Occupancy> result;
   for (auto& [buf, skew] : buf_skew)
   {
     auto occupancy = skew.map.apply_range(
@@ -156,7 +156,7 @@ BufferIterLevelsFromMapping(const loop::Nest& nest,
   return result;
 }
 
-LogicalBufSkews
+std::map<LogicalBuffer, Skew>
 LogicalBufSkewsFromMapping(const loop::Nest& nest,  
                            const problem::Workload& workload)
 {
@@ -166,7 +166,7 @@ LogicalBufSkewsFromMapping(const loop::Nest& nest,
     tiling_boundaries(nest.storage_tiling_boundaries.begin(),
                       nest.storage_tiling_boundaries.end());
 
-  LogicalBufSkews result;
+  std::map<LogicalBuffer, Skew> result;
 
   std::vector<spacetime::Dimension> tags;
   auto p_aff_list = isl_aff_list_alloc(GetIslCtx().get(), n_loops);

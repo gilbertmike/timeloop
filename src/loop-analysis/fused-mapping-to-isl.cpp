@@ -44,12 +44,13 @@ void GatherSubsequentEinsumStrides(
   const problem::FusedWorkload& workload
 );
 
-LogicalBufSkews LogicalBufSkewsFromMapping(mapping::FusedMapping& mapping);
+std::map<LogicalBuffer, Skew>
+LogicalBufSkewsFromMapping(mapping::FusedMapping& mapping);
 
 /******************************************************************************
  * Global function implementations
  *****************************************************************************/
-LogicalBufOccupancies
+std::map<LogicalBuffer, Occupancy>
 OccupanciesFromMapping(mapping::FusedMapping& mapping,
                        const problem::FusedWorkload& workload)
 {
@@ -70,7 +71,7 @@ OccupanciesFromMapping(mapping::FusedMapping& mapping,
     isl_pw_qpolynomial_free(p_iter_size);
   }
 
-  LogicalBufOccupancies occupancies;
+  std::map<LogicalBuffer, Occupancy> occupancies;
   auto tilings = LogicalBufTilingFromMapping(mapping, branch_tiling);
   auto buf_skew = LogicalBufSkewsFromMapping(mapping);
   for (auto& [buf, skew] : buf_skew)
@@ -533,9 +534,10 @@ void GatherSubsequentEinsumStrides(
   }
 }
 
-LogicalBufSkews LogicalBufSkewsFromMapping(mapping::FusedMapping& mapping)
+std::map<LogicalBuffer, Skew>
+LogicalBufSkewsFromMapping(mapping::FusedMapping& mapping)
 {
-  LogicalBufSkews skews;
+  std::map<LogicalBuffer, Skew> skews;
   for (auto path : GetPaths(mapping))
   {
     std::vector<spacetime::Dimension> tags;

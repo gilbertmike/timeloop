@@ -300,30 +300,9 @@ void NestAnalysis::ComputeWorkingSets()
 
   if (gUseIslAnalysis)
   {
-    auto occupancies = OccupanciesFromMapping(cached_nest, *workload_);
-
-    auto spatial_reuse_models = SpatialReuseModels(SimpleLinkTransferModel(),
-                                                   SimpleMulticastModel());
-
-    for (const auto& [buf, occ] : occupancies)
-    {
-      auto temp_reuse_out = TemporalReuseAnalysis(
-        TemporalReuseAnalysisInput(
-          buf,
-          occ,
-          BufTemporalReuseOpts{.exploit_temporal_reuse=true}
-        )
-      );
-
-      auto spatial_reuse_out = SpatialReuseAnalysis(
-        SpatialReuseAnalysisInput(buf,
-                                  temp_reuse_out.fill,
-                                  static_cast<const Occupancy&>(nullptr)),
-        spatial_reuse_models
-      );
-    }
-
-    auto legacy_output = GenerateLegacyNestAnalysisOutput();
+    auto legacy_output =
+      GenerateLegacyNestAnalysisOutput(ReuseAnalysis(cached_nest,
+                                                     *workload_));
     working_sets_ = legacy_output.second;
   }
 

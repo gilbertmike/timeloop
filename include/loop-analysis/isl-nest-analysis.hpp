@@ -16,9 +16,11 @@ struct LogicalBufferStats
   Reads parent_reads;
 };
 
-struct IslAnalysisOutput
+struct ReuseAnalysisOutput
 {
   std::map<LogicalBuffer, LogicalBufferStats> buf_to_stats;
 };
+
+ReuseAnalysisOutput ReuseAnalysis(const loop::Nest&, const problem::Workload&);
 
 }; // namespace analysis

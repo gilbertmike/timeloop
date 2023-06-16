@@ -173,37 +173,37 @@ struct Reads
   isl::map map;
 
   Reads(const std::vector<spacetime::Dimension>& dim_in_tags, isl::map map);
-}
+};
 
 /******************************************************************************
  * Converter from mapping to intermediate representation
  *****************************************************************************/
 
-/**
- * @brief Infer logical buffer occupancies from fused mapping
- * 
- * @param mapping 
- * @return LogicalBufOccupancies 
- */
+// /**
+//  * @brief Infer logical buffer occupancies from fused mapping
+//  * 
+//  * @param mapping 
+//  * @return LogicalBufOccupancies 
+//  */
+// // LogicalBufOccupancies
+// // OccupanciesFromMapping(const mapping::FusedMapping mapping,
+// //                        const problem::Workload& workload);
+
+// BranchTilings TilingFromMapping(mapping::FusedMapping& mapping,
+//                                 problem::FusedWorkload& workload);
+
 // LogicalBufOccupancies
-// OccupanciesFromMapping(const mapping::FusedMapping mapping,
+// OccupanciesFromMapping(mapping::FusedMapping& mapping,
+//                        const problem::FusedWorkload& workload);
+
+// /**
+//  * @brief Infer logical buffer occupancies from loop nest mapping
+//  * 
+//  * @param nest 
+//  * @return LogicalBufOccupancies 
+//  */
+// LogicalBufOccupancies
+// OccupanciesFromMapping(const loop::Nest& nest,
 //                        const problem::Workload& workload);
-
-BranchTilings TilingFromMapping(mapping::FusedMapping& mapping,
-                                problem::FusedWorkload& workload);
-
-LogicalBufOccupancies
-OccupanciesFromMapping(mapping::FusedMapping& mapping,
-                       const problem::FusedWorkload& workload);
-
-/**
- * @brief Infer logical buffer occupancies from loop nest mapping
- * 
- * @param nest 
- * @return LogicalBufOccupancies 
- */
-LogicalBufOccupancies
-OccupanciesFromMapping(const loop::Nest& nest,
-                       const problem::Workload& workload);
 
 };  // namespace analysis

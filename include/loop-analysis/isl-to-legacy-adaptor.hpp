@@ -9,6 +9,6 @@ namespace analysis
 {
 
 std::pair<CompoundComputeNest, CompoundDataMovementNest>
-GenerateLegacyNestAnalysisOutput(IslAnalysisOutput);
+GenerateLegacyNestAnalysisOutput(ReuseAnalysisOutput);
 
 }; // namespace analysis
