@@ -105,10 +105,10 @@ bool testMapLookup(config::CompoundConfigNode& CNode, YAML::Node&YNode)
 bool nodeEq(config::CompoundConfigNode CNode, YAML::Node YNode, 
                     const std::string& key, YAML::NodeType::value TYPE)
 {
-    std::cout << "KEY: " << key << std::endl;
-    std::cout << "CHILD TYPE: " << TYPE << std::endl;
-    std::cout << "PARENT TYPE: " << YNode.Type() << std::endl;
+    // namespace of if a node is correct
     bool nodePass = false;
+
+    // determines what check to do based off child node type
     switch(TYPE)
     {
         // null should pull out the same thing as scalar
