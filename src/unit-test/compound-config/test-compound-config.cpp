@@ -6,7 +6,7 @@
 
 // makes sure for a certain type CCN agrees with YNode
 template <typename T>
-bool testScalarLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, std::string& key)
+bool testScalarLookup(const config::CompoundConfigNode& CNode, const YAML::Node& YNode, const std::string& key)
 {
     T expectedScalar = YNode[key].as<T>();
     T actualScalar;
@@ -15,7 +15,7 @@ bool testScalarLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, std:
     return expectedScalar == actualScalar;
 }
 
-bool testSequenceLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, std::string& key)
+bool testSequenceLookup(const config::CompoundConfigNode& CNode, const YAML::Node& YNode, const std::string& key)
 {
     std::vector<std::string> expectedSeq = YNode[key].as<std::vector<std::string>>();
     std::vector<std::string> actualSeq;
@@ -24,6 +24,63 @@ bool testSequenceLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, st
     return expectedSeq == actualSeq;
 }
 
+// tests the CCN lookup functions provided a given root node
+bool testMapLookup(const config::CompoundConfigNode& root, const YAML::Node&YNode)
+{
+    // defines return value namespace
+    bool ret = true;
+
+    // goes through all keys and compares the values.
+    for (auto node: YNode)
+    {
+        // whether or not comparison at this node has passed
+        bool nodePass = false;
+        // extracts the key
+        std::string key = node.first.as<std::string>();
+
+        // tests all lookups with generic functions based on YAML type
+        switch(node.Type())
+        {
+            // null should pull out the same thing as scalar
+            case YAML::NodeType::Null:
+            // tests all possible scalar output values
+            case YAML::NodeType::Scalar:
+                // tests precision values
+                BOOST_CHECK(nodePass = nodePass && testScalarLookup<double>(root, node, key));
+                BOOST_CHECK(nodePass = nodePass && testScalarLookup<bool>(root, node, key));
+                BOOST_CHECK(nodePass = nodePass && testScalarLookup<int>(root, node, key));
+                BOOST_CHECK(nodePass = nodePass && testScalarLookup<unsigned int>(root, node, key));
+                // implicitly tests the lookupValueLongOnly
+                BOOST_CHECK(nodePass = nodePass && testScalarLookup<long long>(root, node, key));
+                BOOST_CHECK(nodePass = nodePass && testScalarLookup<unsigned long long>(root, node, key));
+                // tests floating point values
+                BOOST_CHECK(nodePass = nodePass && testScalarLookup<double>(root, node, key));
+                BOOST_CHECK(nodePass = nodePass && testScalarLookup<float>(root, node, key));
+                // tests strings
+                // TODO:: This doesn't compile figure it out later
+                // BOOST_CHECK(testScalarLookup<const char *>(root, node, key));
+                BOOST_CHECK(nodePass = nodePass && testScalarLookup<std::string>(root, node, key));
+                break;
+            case YAML::NodeType::Sequence:
+                BOOST_CHECK(nodePass = testSequenceLookup(root, node, key));
+                break;
+            case YAML::NodeType::Map:
+                BOOST_CHECK(nodePass = testMapLookup(root.lookup(key), node[key]));
+                break;
+            case YAML::NodeType::Undefined:
+
+                break;
+            default:
+                throw std::runtime_error(
+                    std::string("You should not be here in testMapLookup")
+                );
+                break;
+        }
+        ret = ret && nodePass;
+    }
+
+    return ret;
+}
 // number of testing cycles to run
 int TESTS = 2000;
 // the seed for the entropy source
@@ -54,52 +111,8 @@ BOOST_AUTO_TEST_CASE(testStaticLookups)
         // reads in the YAML file independently of CompoundConfig
         YAML::Node testRef = YAML::LoadFile(TEST_LOC + FILE);
 
-        // gets the root CompoundConfigNode
-        config::CompoundConfigNode root = cConfig.getRoot();
-
-        // goes through all keys and compares the values.
-        // figure this out. you may need a helper file.
-        for (auto node: testRef)
-        {
-            // extracts the key
-            std::string key = node.first.as<std::string>();
-
-            // tests all lookups with generic functions based on YAML type
-            switch(node.Type())
-            {
-                // null should pull out the same thing as scalar
-                case YAML::NodeType::Null:
-                // tests all possible scalar output values
-                case YAML::NodeType::Scalar:
-                    // tests precision values
-                    BOOST_CHECK(testScalarLookup<double>(root, node, key));
-                    BOOST_CHECK(testScalarLookup<bool>(root, node, key));
-                    BOOST_CHECK(testScalarLookup<int>(root, node, key));
-                    BOOST_CHECK(testScalarLookup<unsigned int>(root, node, key));
-                    // implicitly tests the lookupValueLongOnly
-                    BOOST_CHECK(testScalarLookup<long long>(root, node, key));
-                    BOOST_CHECK(testScalarLookup<unsigned long long>(root, node, key));
-                    // tests floating point values
-                    BOOST_CHECK(testScalarLookup<double>(root, node, key));
-                    BOOST_CHECK(testScalarLookup<float>(root, node, key));
-                    // tests strings
-                    // TODO:: This doesn't compile figure it out later
-                    // BOOST_CHECK(testScalarLookup<const char *>(root, node, key));
-                    BOOST_CHECK(testScalarLookup<std::string>(root, node, key));
-                    break;
-                case YAML::NodeType::Sequence:
-                    break;
-                case YAML::NodeType::Map:
-                    break;
-                case YAML::NodeType::Undefined:
-                    break;
-                default:
-                    throw std::runtime_error(
-                        std::string("Wrong YAML FORMAT: ") + FILE
-                    );
-                    break;
-            }
-        }
+        // tests the entire namespace
+        testMapLookup(cConfig.getRoot(), testRef);
     }
 }
 
