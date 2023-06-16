@@ -13,7 +13,7 @@ uint SEED = 42;
 #define RAND_MAX = ULONG_LONG_MAX
 
 // the location of the test files
-std::string TEST_LOC = "src/unit-test/compound-config/tests/";
+std::string TEST_LOC = "./src/unit-test/compound-config/tests/";
 
 // static YAML file names we want to load in for the test
 std::map<std::string, std::vector<std::string>> FILES = {
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(testStaticLookups)
             // reads the YAML file into CompoundConfig
             CompoundConfig cConfig = CompoundConfig(DIR + FILE, "yaml");
             // reads in the YAML file independently of CompoundConfig
-            YAML::Node testRef = YAML::LoadFile(TEST_LOC + FILE);
+            YAML::Node testRef = YAML::LoadFile(DIR + FILE);
 
             // tests the entire file
             testMapLookup(cConfig.getRoot(), testRef);
