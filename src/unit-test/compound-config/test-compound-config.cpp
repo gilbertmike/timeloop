@@ -40,7 +40,7 @@ bool testScalarLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, cons
         // predeclares values
         T expectedScalar, actualScalar;
         // value resolution
-        expectedScalar = YNode[key].template as<T>();
+        expectedScalar = YNode[key].as<T>();
         actualScalar = CNode.lookupValue(key, expectedScalar);
 
         // equality check
@@ -86,8 +86,10 @@ bool testMapLookup(config::CompoundConfigNode& CNode, YAML::Node&YNode)
     {
         // extracts the key
         const std::string key = nodeMapPair.first.as<std::string>();
+        // gets nodeEq result
+        bool res = nodeEq(CNode, YNode, key, nodeMapPair.second.Type());
         // tests all lookups for this node
-        equal = equal && nodeEq(CNode, YNode, key, nodeMapPair.second.Type());
+        equal = equal && res;
     }
 
     return equal;
