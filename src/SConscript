@@ -130,6 +130,7 @@ loop-analysis/logical-buffer.cpp
 loop-analysis/loop-state.cpp
 loop-analysis/mapping-to-isl.cpp
 loop-analysis/isl-ir.cpp
+loop-analysis/isl-to-legacy-adaptor.cpp
 loop-analysis/tiling.cpp
 loop-analysis/tiling-tile-info.cpp
 loop-analysis/point.cpp

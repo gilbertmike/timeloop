@@ -301,8 +301,18 @@ void NestAnalysis::ComputeWorkingSets()
   if (gUseIslAnalysis)
   {
     auto legacy_output =
-      GenerateLegacyNestAnalysisOutput(ReuseAnalysis(cached_nest,
-                                                     *workload_));
+      GenerateLegacyNestAnalysisOutput(
+        ReuseAnalysis(cached_nest, *workload_),
+        nest_state_,
+        storage_tiling_boundaries_,
+        master_spatial_level_,
+        storage_boundary_level_,
+        num_spatial_elems_,
+        logical_fanouts_,
+        *workload_
+      );
+
+    compute_info_sets_ = legacy_output.first;
     working_sets_ = legacy_output.second;
   }
 

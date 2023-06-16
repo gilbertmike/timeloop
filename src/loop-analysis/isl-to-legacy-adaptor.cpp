@@ -1,17 +1,79 @@
 #include "loop-analysis/isl-to-legacy-adaptor.hpp"
 
+#include <barvinok/isl.h>
+
+#include "isl-wrapper/ctx-manager.hpp"
 #include "isl-wrapper/isl-functions.hpp"
 
 namespace analysis
 {
+/******************************************************************************
+ * Local function declarations
+ *****************************************************************************/
+
+CompoundComputeNest GenerateCompoundComputeNest(
+  const ReuseAnalysisOutput& isl_analysis_output,
+  const std::vector<analysis::LoopState>& nest_state,
+  const std::vector<uint64_t>& storage_tiling_boundaries
+);
+
+CompoundDataMovementNest GenerateCompoundDataMovementNest(
+  ReuseAnalysisOutput isl_analysis_output,
+  const std::vector<analysis::LoopState>& nest_state,
+  const std::vector<uint64_t>& storage_tiling_boundaries,
+  const std::vector<bool>& master_spatial_level,
+  const std::vector<bool>& storage_boundary_level,
+  const std::vector<uint64_t>& num_spatial_elems,
+  const std::vector<uint64_t>& logical_fanouts,
+  const problem::Workload& workload
+);
+
+/******************************************************************************
+ * Global function implementations
+ *****************************************************************************/
 
 std::pair<CompoundComputeNest, CompoundDataMovementNest>
-GenerateLegacyNestAnalysisOutput(IslAnalysisOutput)
+GenerateLegacyNestAnalysisOutput(
+  const ReuseAnalysisOutput& isl_analysis_output,
+  const std::vector<analysis::LoopState>& nest_state,
+  const std::vector<uint64_t>& storage_tiling_boundaries,
+  const std::vector<bool>& master_spatial_level,
+  const std::vector<bool>& storage_boundary_level,
+  const std::vector<uint64_t>& num_spatial_elems,
+  const std::vector<uint64_t>& logical_fanouts,
+  const problem::Workload& workload
+)
 {
-  CompoundDataMovementNest working_sets;
+  return std::make_pair(
+    GenerateCompoundComputeNest(isl_analysis_output,
+                                nest_state,
+                                storage_tiling_boundaries),
+    GenerateCompoundDataMovementNest(isl_analysis_output,
+                                     nest_state,
+                                     storage_tiling_boundaries,
+                                     master_spatial_level,
+                                     storage_boundary_level,
+                                     num_spatial_elems,
+                                     logical_fanouts,
+                                     workload)
+  );
+}
+
+
+/******************************************************************************
+ * Local function implementations
+ *****************************************************************************/
+
+CompoundComputeNest GenerateCompoundComputeNest(
+  const ReuseAnalysisOutput& isl_analysis_output,
+  const std::vector<analysis::LoopState>& nest_state,
+  const std::vector<uint64_t>& storage_tiling_boundaries
+)
+{
+  CompoundComputeNest compute_info_sets;
 
   size_t num_compute_units = 1;
-  for (const auto& state : nest_state_)
+  for (const auto& state : nest_state)
   {
     if (loop::IsSpatial(state.descriptor.spacetime_dimension))
     {
@@ -19,17 +81,18 @@ GenerateLegacyNestAnalysisOutput(IslAnalysisOutput)
     }
   }
   // Insert innermost level with number of iterations divided by spatial elements
-  BufferID innermost_buf_id = storage_tiling_boundaries_.size();
+  BufferID innermost_buf_id = storage_tiling_boundaries.size();
 
   uint64_t max_temporal_iterations = 1;
-  for (auto& state : nest_state_)
+  for (auto& state : nest_state)
   {
     if (!loop::IsSpatial(state.descriptor.spacetime_dimension))
       max_temporal_iterations *= state.descriptor.end;
   }
 
-  for (auto& [buf, occupancy] : occupancies)
+  for (auto& [buf, stats] : isl_analysis_output.buf_to_stats)
   {
+    const auto& occupancy = stats.occupancy;
     if (buf.buffer_id == innermost_buf_id)
     {
       auto compute_info = ComputeInfo();
@@ -41,30 +104,47 @@ GenerateLegacyNestAnalysisOutput(IslAnalysisOutput)
         )
       ) / num_compute_units;
       compute_info.max_temporal_iterations = max_temporal_iterations;
-      compute_info_sets_.push_back(compute_info);
+      compute_info_sets.push_back(compute_info);
       break;
     }
   }
-  for (decltype(nest_state_)::size_type i = 0; i < nest_state_.size() - 1; ++i)
+  for (long unsigned i = 0; i < nest_state.size() - 1; ++i)
   {
     auto compute_info = ComputeInfo();
-    compute_info_sets_.push_back(compute_info);
+    compute_info_sets.push_back(compute_info);
   }
 
-  BufferID cur_buffer_id = storage_tiling_boundaries_.size();
+  return compute_info_sets;
+}
+
+CompoundDataMovementNest GenerateCompoundDataMovementNest(
+  ReuseAnalysisOutput isl_analysis_output,
+  const std::vector<analysis::LoopState>& nest_state,
+  const std::vector<uint64_t>& storage_tiling_boundaries,
+  const std::vector<bool>& master_spatial_level,
+  const std::vector<bool>& storage_boundary_level,
+  const std::vector<uint64_t>& num_spatial_elems,
+  const std::vector<uint64_t>& logical_fanouts,
+  const problem::Workload& workload
+)
+{
+  CompoundDataMovementNest working_sets;
+
+  BufferID cur_buffer_id = storage_tiling_boundaries.size();
   bool first_loop = true;
   bool last_boundary_found = false;
   bool should_dump = false;
-  for (const auto& cur : nest_state_)
+  for (const auto& cur : nest_state)
   {
-    bool valid_level = !loop::IsSpatial(cur.descriptor.spacetime_dimension) || master_spatial_level_[cur.level];
+    bool valid_level = !loop::IsSpatial(cur.descriptor.spacetime_dimension)
+      || master_spatial_level[cur.level];
     if (!valid_level)
     {
       continue;
     }
 
-    auto is_master_spatial = master_spatial_level_[cur.level];
-    auto is_boundary = storage_boundary_level_[cur.level];
+    auto is_master_spatial = master_spatial_level[cur.level];
+    auto is_boundary = storage_boundary_level[cur.level];
 
     if (first_loop)
     {
@@ -89,25 +169,24 @@ GenerateLegacyNestAnalysisOutput(IslAnalysisOutput)
     }
 
     for (unsigned dspace_id = 0;
-        dspace_id < workload_->GetShape()->NumDataSpaces;
+        dspace_id < workload.GetShape()->NumDataSpaces;
         ++dspace_id)
     {
       DataMovementInfo tile;
       tile.link_transfers = 0;
-      tile.replication_factor = num_spatial_elems_[cur.level];
-      tile.fanout = logical_fanouts_[cur.level];
-      tile.is_on_storage_boundary = storage_boundary_level_[cur.level];
-      tile.is_master_spatial = master_spatial_level_[cur.level];
+      tile.replication_factor = num_spatial_elems[cur.level];
+      tile.fanout = logical_fanouts[cur.level];
+      tile.is_on_storage_boundary = storage_boundary_level[cur.level];
+      tile.is_master_spatial = master_spatial_level[cur.level];
 
       if (should_dump)
       {
-        auto& occ = eff_occupancies.at(LogicalBuffer(cur_buffer_id,
-                                                      dspace_id,
-                                                      0));
-        const auto& key_to_access_stats =
-          result.multicast_info.compat_access_stats.at(
-            LogicalBuffer(cur_buffer_id, dspace_id, 0)
-          );
+        const auto& stats = isl_analysis_output.buf_to_stats.at(
+          LogicalBuffer(cur_buffer_id, dspace_id, 0)
+        );
+        const auto& occ = stats.effective_occupancy;
+        const auto& key_to_access_stats = stats.compat_access_stats;
+        const auto& link_transfers = stats.link_transfer;
 
         for (const auto& [key, access_stats] : key_to_access_stats)
         {
@@ -117,23 +196,15 @@ GenerateLegacyNestAnalysisOutput(IslAnalysisOutput)
           };
         }
 
-        for (const auto& [buf_ab, transfers] :
-            result.link_transfer_info.link_transfers)
-        {
-          const auto& buf = buf_ab.first;
-          if (buf.buffer_id == cur_buffer_id && buf.dspace_id == dspace_id) 
-          {
-            auto p_val = isl::get_val_from_singular_qpolynomial(
-              isl::sum_map_range_card(transfers.map)
-            );
-            p_val = isl_val_div(
-              p_val,
-              isl_val_int_from_si(GetIslCtx().get(),
-                                  num_spatial_elems_[cur.level])
-            );
-            tile.link_transfers = isl::val_to_double(p_val);
-          }
-        }
+        auto p_val = isl::get_val_from_singular_qpolynomial(
+          isl::sum_map_range_card(link_transfers.map)
+        );
+        p_val = isl_val_div(
+          p_val,
+          isl_val_int_from_si(GetIslCtx().get(),
+                              num_spatial_elems[cur.level])
+        );
+        tile.link_transfers = isl::val_to_double(p_val);
 
         auto p_occ_map = occ.map.copy();
         std::cout << "occ: " << isl_map_to_str(p_occ_map) << std::endl;
@@ -163,6 +234,8 @@ GenerateLegacyNestAnalysisOutput(IslAnalysisOutput)
       cur_buffer_id--;
     }
   }
+
+  return working_sets;
 }
 
 }; // namespace analysis

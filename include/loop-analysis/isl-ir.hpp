@@ -1,13 +1,35 @@
+/* Copyright (c) 2021, NVIDIA CORPORATION. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *  * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *  * Neither the name of NVIDIA CORPORATION nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 /**
  * @file isl-ir.hpp
- * @author your name (you@domain.com)
+ * @author Michael Gilbert (gilbertm@mit.edu)
  * @brief This header describes the IR that forms the interface between the
  *        mapping and the nest analysis.
- * @version 0.1
- * @date 2023-02-07
- * 
- * @copyright Copyright (c) 2023
- * 
  */
 #pragma once
 
@@ -21,14 +43,10 @@
 
 namespace analysis
 {
+
 using DataSpaceID = problem::DataSpaceId;
 using FactorizedDimensionID = problem::Shape::FactorizedDimensionID;
 using EinsumID = size_t;
-
-
-/******************************************************************************
- * Intermediate representation between mapping and analysis
- *****************************************************************************/
 using BufferID = mapping::BufferID;
 
 struct LogicalBuffer
@@ -37,41 +55,14 @@ struct LogicalBuffer
   DataSpaceID dspace_id;
   mapping::NodeID branch_leaf_id;
 
-  LogicalBuffer(BufferID buffer_id,
-                DataSpaceID dspace_id,
-                mapping::NodeID branch_leaf_id) :
-    buffer_id(buffer_id), dspace_id(dspace_id), branch_leaf_id(branch_leaf_id)
-  {
-  }
+  LogicalBuffer(
+    BufferID buffer_id,
+    DataSpaceID dspace_id,
+    mapping::NodeID branch_leaf_id
+  );
 
-  LogicalBuffer(const LogicalBuffer& other) :
-    buffer_id(other.buffer_id), dspace_id(other.dspace_id),
-    branch_leaf_id(other.branch_leaf_id)
-  {
-  }
-
-  bool operator<(const LogicalBuffer& other) const
-  {
-    if (buffer_id < other.buffer_id)
-    {
-      return true;
-    }
-    else if (buffer_id == other.buffer_id && dspace_id < other.dspace_id)
-    {
-      return true;
-    }
-    else if (buffer_id == other.buffer_id && dspace_id == other.dspace_id)
-    {
-      return branch_leaf_id < other.branch_leaf_id;
-    }
-    return false;
-  }
-
-  bool operator==(const LogicalBuffer& other) const
-  {
-    return buffer_id == other.buffer_id && dspace_id == other.dspace_id
-           && branch_leaf_id == other.branch_leaf_id;
-  }
+  bool operator<(const LogicalBuffer& other) const;
+  bool operator==(const LogicalBuffer& other) const;
 };
 
 std::ostream& operator<<(std::ostream& os, const LogicalBuffer& buf);
@@ -145,10 +136,6 @@ struct Occupancy
 
 /**
  * @brief TARDIS-style X-relation.
- * 
- * This is used:
- *   - To calculate access counts which is passed to the uarch model
- *   - As input to TARDIS for code-gen
  */
 struct Transfers
 {
@@ -159,6 +146,9 @@ struct Transfers
             isl::map map);
 };
 
+/**
+ * @brief Space-Time -> Fill of a logical buffer.
+ */
 struct Fill
 {
   std::vector<spacetime::Dimension> dim_in_tags;
@@ -167,6 +157,9 @@ struct Fill
   Fill(const std::vector<spacetime::Dimension>& dim_in_tags, isl::map map);
 };
 
+/**
+ * @brief Space-Time -> Reads to a logical buffer.
+ */
 struct Reads
 {
   std::vector<spacetime::Dimension> dim_in_tags;
@@ -174,36 +167,5 @@ struct Reads
 
   Reads(const std::vector<spacetime::Dimension>& dim_in_tags, isl::map map);
 };
-
-/******************************************************************************
- * Converter from mapping to intermediate representation
- *****************************************************************************/
-
-// /**
-//  * @brief Infer logical buffer occupancies from fused mapping
-//  * 
-//  * @param mapping 
-//  * @return LogicalBufOccupancies 
-//  */
-// // LogicalBufOccupancies
-// // OccupanciesFromMapping(const mapping::FusedMapping mapping,
-// //                        const problem::Workload& workload);
-
-// BranchTilings TilingFromMapping(mapping::FusedMapping& mapping,
-//                                 problem::FusedWorkload& workload);
-
-// LogicalBufOccupancies
-// OccupanciesFromMapping(mapping::FusedMapping& mapping,
-//                        const problem::FusedWorkload& workload);
-
-// /**
-//  * @brief Infer logical buffer occupancies from loop nest mapping
-//  * 
-//  * @param nest 
-//  * @return LogicalBufOccupancies 
-//  */
-// LogicalBufOccupancies
-// OccupanciesFromMapping(const loop::Nest& nest,
-//                        const problem::Workload& workload);
 
 };  // namespace analysis

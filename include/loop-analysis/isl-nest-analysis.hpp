@@ -14,6 +14,15 @@ struct LogicalBufferStats
   Fill fill;
   Transfers link_transfer;
   Reads parent_reads;
+
+  /***************** Compatibility with Timeloop v2.0 ************************/
+  struct AccessStats
+  {
+    double accesses;
+    double hops;
+  };
+  std::map<std::pair<uint64_t, uint64_t>, AccessStats> compat_access_stats;
+  /***************************************************************************/
 };
 
 struct ReuseAnalysisOutput
