@@ -13,7 +13,7 @@ uint SEED = 42;
 #define RAND_MAX = ULONG_LONG_MAX
 
 // the location of the test files
-std::string TEST_LOC = "../unit-test/compound-config/tests/";
+std::string TEST_LOC = "src/unit-test/compound-config/tests/";
 
 // static YAML file names we want to load in for the test
 std::map<std::string, std::vector<std::string>> FILES = {
@@ -43,6 +43,7 @@ bool testScalarLookup(const config::CompoundConfigNode& CNode, const YAML::Node&
     return expectedScalar == actualScalar;
 }
 
+// makes sure sequences agree in CCN and YNode
 bool testSequenceLookup(const config::CompoundConfigNode& CNode, const YAML::Node& YNode, const std::string& key)
 {
     std::vector<std::string> expectedSeq = YNode[key].as<std::vector<std::string>>();
@@ -52,7 +53,7 @@ bool testSequenceLookup(const config::CompoundConfigNode& CNode, const YAML::Nod
     return expectedSeq == actualSeq;
 }
 
-// tests the CCN lookup functions provided a given root node
+// tests the CCN lookup functions provided a given root node. Treats all nodes as maps.
 bool testMapLookup(const config::CompoundConfigNode& root, const YAML::Node&YNode)
 {
     // defines return value namespace
