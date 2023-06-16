@@ -66,8 +66,7 @@ bool testSequenceLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, co
     // goes through all elements in the sequence
     for (int i = 0; (std::size_t) i < childYNode.size(); i++)
     {
-        std::cout << i << std::endl;
-        std::cout << "passed" << std::endl;
+        // unpacks element
         auto nextCNode = childCNode[i];
         auto nextYNode = childYNode[i];
         // only works because values are always associated by maps
