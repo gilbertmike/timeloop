@@ -32,15 +32,19 @@ std::map<std::string, std::vector<std::string>> FILES = {
     }
 };
 
-// makes sure for a certain type CCN agrees with YNode
+// makes sure for a certain type CCN agrees with YNode. Defaults to false if conversion is wrong.
 template <typename T>
 bool testScalarLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, const std::string& key)
 {
-    T expectedScalar = YNode[key].as<T>();
-    T actualScalar;
-    CNode.lookupValue(key, actualScalar);
+    try {
+        T expectedScalar = YNode[key].as<T>();
+        T actualScalar;
+        CNode.lookupValue(key, actualScalar);
 
-    return expectedScalar == actualScalar;
+        return expectedScalar == actualScalar;
+    } catch(const YAML::TypedBadConversion<T>& e) {
+        return false;
+    }
 }
 
 // makes sure sequences agree in CCN and YNode
@@ -72,6 +76,7 @@ bool testMapLookup(config::CompoundConfigNode& CNode, YAML::Node&YNode)
     // goes through all keys and compares the values.
     for (auto nodeIterVal: YNode)
     {
+        std::cout << "looped" << nodeIterVal.second.Type() << std::endl;
         // whether or not comparison at this node has passed
         bool nodePass = false;
         // extracts the key
@@ -82,9 +87,11 @@ bool testMapLookup(config::CompoundConfigNode& CNode, YAML::Node&YNode)
         {
             // null should pull out the same thing as scalar
             case YAML::NodeType::Null:
+                break;
             // tests all possible scalar output values
             case YAML::NodeType::Scalar:
                 // tests precision values
+                std::cout << nodePass << std::endl;
                 BOOST_CHECK(nodePass = nodePass || testScalarLookup<double>(CNode, YNode, key));
                 BOOST_CHECK(nodePass = nodePass || testScalarLookup<bool>(CNode, YNode, key));
                 BOOST_CHECK(nodePass = nodePass || testScalarLookup<int>(CNode, YNode, key));
