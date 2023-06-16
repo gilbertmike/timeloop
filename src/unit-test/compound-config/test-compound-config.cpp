@@ -85,13 +85,11 @@ bool testMapLookup(config::CompoundConfigNode& CNode, YAML::Node&YNode)
             // tests all possible scalar output values
             case YAML::NodeType::Scalar:
                 // tests precision values
-                std::cout << "\t\tNow testing precision values" << std::endl;
                 BOOST_CHECK(nodePass = nodePass && testScalarLookup<double>(CNode, YNode, key));
                 BOOST_CHECK(nodePass = nodePass && testScalarLookup<bool>(CNode, YNode, key));
                 BOOST_CHECK(nodePass = nodePass && testScalarLookup<int>(CNode, YNode, key));
                 BOOST_CHECK(nodePass = nodePass && testScalarLookup<unsigned int>(CNode, YNode, key));
                 // implicitly tests the lookupValueLongOnly
-                std::cout << "\t\tNow testing long longs" << std::endl;
                 BOOST_CHECK(nodePass = nodePass && testScalarLookup<long long>(CNode, YNode, key));
                 BOOST_CHECK(nodePass = nodePass && testScalarLookup<unsigned long long>(CNode, YNode, key));
                 // tests floating point values
