@@ -53,27 +53,35 @@ bool testScalarLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, cons
 // foreward declaration
 bool nodeEq(config::CompoundConfigNode CNode, YAML::Node YNode, 
                     const std::string& key, YAML::NodeType::value TYPE);
+// forward declaration
+bool testMapLookup(config::CompoundConfigNode& CNode, YAML::Node&YNode);
 // makes sure sequences agree in CCN and YNode
 bool testSequenceLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, const std::string& key)
 {
     bool equal = true;
+    // grabs next values so they're owned somewhere
+    auto childCNode = CNode.lookup(key);
+    auto childYNode = YNode[key];
 
     // goes through all elements in the sequence
-    for (int i = 0; (std::size_t) i < YNode.size(); i++)
+    for (int i = 0; (std::size_t) i < childYNode.size(); i++)
     {
-        equal = equal && nodeEq(CNode.lookup(key), YNode[key], std::to_string(i), YNode[key][i].Type());
+        std::cout << i << std::endl;
+        std::cout << "passed" << std::endl;
+        auto nextCNode = childCNode[i];
+        auto nextYNode = childYNode[i];
+        // only works because values are always associated by maps
+        equal = equal && testMapLookup(nextCNode, nextYNode);
     }
 
     return equal;
 }
-// forward declaration
-bool testMapLookup(config::CompoundConfigNode& CNode, YAML::Node&YNode);
-// accesses the key for a map because C++ dislikes things not being owned by other things
+// fetches child values as C++ doesn't like temporary values
 bool testMapLookup(config::CompoundConfigNode& CNode, YAML::Node&YNode, const std::string& key)
 {
-    auto nextCNode = CNode.lookup(key);
-    auto nextYNode = YNode[key];
-    return testMapLookup(nextCNode, nextYNode);
+    auto childCNode = CNode.lookup(key);
+    auto childYNode = YNode[key];
+    return testMapLookup(childCNode, childYNode);
 }
 // tests the CCN lookup functions provided a given root node. Treats all input nodes as maps.
 bool testMapLookup(config::CompoundConfigNode& CNode, YAML::Node&YNode)
@@ -98,9 +106,9 @@ bool testMapLookup(config::CompoundConfigNode& CNode, YAML::Node&YNode)
 bool nodeEq(config::CompoundConfigNode CNode, YAML::Node YNode, 
                     const std::string& key, YAML::NodeType::value TYPE)
 {
-    std::cout << key << std::endl;
-    std::cout << TYPE << std::endl;
-    std::cout << YNode.Type() << std::endl;
+    std::cout << "KEY: " << key << std::endl;
+    std::cout << "CHILD TYPE: " << TYPE << std::endl;
+    std::cout << "PARENT TYPE: " << YNode.Type() << std::endl;
     bool nodePass = false;
     switch(TYPE)
     {
