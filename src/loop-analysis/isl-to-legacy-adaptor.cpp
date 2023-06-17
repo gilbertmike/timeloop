@@ -97,7 +97,6 @@ CompoundComputeNest GenerateCompoundComputeNest(
     {
       auto compute_info = ComputeInfo();
       compute_info.replication_factor = num_compute_units;
-      std::cout << occupancy.map.domain() << std::endl;
       compute_info.accesses = isl::val_to_double(
         isl::get_val_from_singular_qpolynomial(
           isl::set_card(occupancy.map.domain())
@@ -207,7 +206,6 @@ CompoundDataMovementNest GenerateCompoundDataMovementNest(
         tile.link_transfers = isl::val_to_double(p_val);
 
         auto p_occ_map = occ.map.copy();
-        std::cout << "occ: " << isl_map_to_str(p_occ_map) << std::endl;
         auto p_occ_count = isl::get_val_from_singular_qpolynomial_fold(
           isl_pw_qpolynomial_bound(
             isl_map_card(

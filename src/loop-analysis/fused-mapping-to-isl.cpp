@@ -64,10 +64,7 @@ OccupanciesFromMapping(mapping::FusedMapping& mapping,
                                                 dspace_indices);
   for (const auto& [leaf_id, tiling] : branch_tiling)
   {
-    std::cout << leaf_id << ":" << std::endl;
-    std::cout << tiling << std::endl;
     auto p_iter_size = isl_set_card(tiling.domain().release());
-    std::cout << isl_pw_qpolynomial_to_str(p_iter_size) << std::endl;
     isl_pw_qpolynomial_free(p_iter_size);
   }
 
@@ -411,7 +408,6 @@ BranchTilings TilingFromMapping(mapping::FusedMapping& mapping,
         //   // {
         //   //   continue;
         //   // }
-        //   std::cout << prob_idx << ", " << einsum_dim << ": " << stride << std::endl;
 
         //   auto eq_aff = eq_maff.get_at(einsum_dim_idx);
 

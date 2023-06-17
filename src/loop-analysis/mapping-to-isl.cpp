@@ -209,8 +209,6 @@ LogicalBufSkewsFromMapping(const loop::Nest& nest,
       );
       auto map = isl::manage(p_map).reverse();
 
-      std::cout << "arch(" << arch_level << "): " << map << std::endl;
-      std::cout << "loop_idx: " << loop_idx << std::endl;
       for (const auto& [dspace_id, _] : workload.GetShape()->DataSpaceIDToName)
       {
         result.emplace(std::make_pair(LogicalBuffer(arch_level, dspace_id, 0),
@@ -336,8 +334,6 @@ LogicalBufSkewsFromMapping(const loop::Nest& nest,
   );
   auto map = isl::manage(p_map).reverse();
 
-  std::cout << "arch(" << arch_level << "): " << map << std::endl;
-  std::cout << "loop_idx: " << loop_idx << std::endl;
   for (const auto& [dspace_id, _] : workload.GetShape()->DataSpaceIDToName)
   {
     result.emplace(std::make_pair(
