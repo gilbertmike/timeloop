@@ -24,15 +24,25 @@ ReuseAnalysisOutput ReuseAnalysis(
 
   auto output = ReuseAnalysisOutput();
 
+  // Detect maximum arch level to find the compute level
+  auto compute_level = 0;
+  for (const auto& [buf, _] : occupancies)
+  {
+    compute_level = std::max(compute_level, buf.buffer_id);
+  }
+
   for (const auto& [buf, occ] : occupancies)
   {
     auto stats = LogicalBufferStats(buf);
 
+    bool can_exploit_temporal_reuse = buf.buffer_id != compute_level;
     auto temp_reuse_out = TemporalReuseAnalysis(
       TemporalReuseAnalysisInput(
         buf,
         occ,
-        BufTemporalReuseOpts{.exploit_temporal_reuse=true}
+        BufTemporalReuseOpts{
+          .exploit_temporal_reuse=can_exploit_temporal_reuse
+        }
       )
     );
 

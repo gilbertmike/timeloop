@@ -147,7 +147,6 @@ CompoundDataMovementNest GenerateCompoundDataMovementNest(
 
     if (first_loop)
     {
-      first_loop = false;
       last_boundary_found = false;
       should_dump = true;
     }
@@ -178,12 +177,13 @@ CompoundDataMovementNest GenerateCompoundDataMovementNest(
       tile.is_on_storage_boundary = storage_boundary_level[cur.level];
       tile.is_master_spatial = master_spatial_level[cur.level];
 
+      const auto& stats = isl_analysis_output.buf_to_stats.at(
+        LogicalBuffer(cur_buffer_id, dspace_id, 0)
+      );
+      const auto& occ = stats.effective_occupancy;
+
       if (should_dump)
       {
-        const auto& stats = isl_analysis_output.buf_to_stats.at(
-          LogicalBuffer(cur_buffer_id, dspace_id, 0)
-        );
-        const auto& occ = stats.effective_occupancy;
         const auto& key_to_access_stats = stats.compat_access_stats;
         const auto& link_transfers = stats.link_transfer;
 
@@ -204,7 +204,14 @@ CompoundDataMovementNest GenerateCompoundDataMovementNest(
                               num_spatial_elems[cur.level])
         );
         tile.link_transfers = isl::val_to_double(p_val);
+      }
 
+      if (first_loop)
+      {
+        tile.size = 0;
+      }
+      else if (should_dump)
+      {
         auto p_occ_map = occ.map.copy();
         auto p_occ_count = isl::get_val_from_singular_qpolynomial_fold(
           isl_pw_qpolynomial_bound(
@@ -212,7 +219,7 @@ CompoundDataMovementNest GenerateCompoundDataMovementNest(
               isl_map_project_out(
                 p_occ_map,
                 isl_dim_in,
-                isl_map_dim(p_occ_map, isl_dim_in)-3,
+                isl_map_dim(p_occ_map, isl_dim_in)-2,
                 2
               )
             ),
@@ -221,6 +228,20 @@ CompoundDataMovementNest GenerateCompoundDataMovementNest(
           )
         );
         tile.size = isl::val_to_double(p_occ_count);
+      }
+      else if (is_boundary)
+      {
+        auto p_occ_map = occ.map.copy();
+        auto p_occ_count = isl::get_val_from_singular_qpolynomial_fold(
+          isl_pw_qpolynomial_bound(isl_map_card(p_occ_map),
+                                   isl_fold_max,
+                                   nullptr)
+        );
+        tile.size = isl::val_to_double(p_occ_count);
+      }
+      else
+      {
+        tile.size = 0;
       }
 
       working_sets[dspace_id].push_back(tile);
@@ -231,6 +252,8 @@ CompoundDataMovementNest GenerateCompoundDataMovementNest(
       should_dump = false;
       cur_buffer_id--;
     }
+
+    first_loop = false;
   }
 
   return working_sets;
