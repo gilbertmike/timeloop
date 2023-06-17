@@ -80,6 +80,11 @@ LinkTransferInfo SimpleLinkTransferModel::Apply(
   const Occupancy& occupancy
 ) const
 {
+  if (fill.dim_in_tags.size() != occupancy.dim_in_tags.size())
+  {
+    throw std::logic_error("fill and occupancy have different sizes");
+  }
+
   auto n = fill.dim_in_tags.size();
   if (n == 0 || fill.dim_in_tags.back() == spacetime::Dimension::Time)
   {
@@ -96,6 +101,8 @@ LinkTransferInfo SimpleLinkTransferModel::Apply(
 
   auto complete_connectivity =
     isl::insert_equal_dims(connectivity_, 0, 0, n - 3);
+  std::cout << complete_connectivity << std::endl;
+  std::cout << occupancy.map << std::endl;
   auto available_from_neighbors =
     complete_connectivity.apply_range(occupancy.map);
   auto fill_set = fill.map.intersect(available_from_neighbors);

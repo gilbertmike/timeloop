@@ -36,6 +36,10 @@ ReuseAnalysisOutput ReuseAnalysis(
       )
     );
 
+    std::cout << buf << std::endl;
+    std::cout << temp_reuse_out.fill.map << std::endl;
+    std::cout << temp_reuse_out.effective_occupancy.map << std::endl;
+
     auto spatial_reuse_out = SpatialReuseAnalysis(
       SpatialReuseAnalysisInput(buf,
                                 temp_reuse_out.fill,

@@ -103,7 +103,8 @@ std::pair<Occupancy, Fill> FillFromOccupancy(const Occupancy& occupancy)
     );
   }
 
-  return std::make_pair(occupancy, Fill(tags, isl::manage(p_occ)));
+  return std::make_pair(Occupancy(tags, isl::manage(isl_map_copy(p_occ))),
+                        Fill(tags, isl::manage(p_occ)));
 }
 
 
