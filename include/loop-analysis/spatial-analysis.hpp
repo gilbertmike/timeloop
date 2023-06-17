@@ -1,13 +1,16 @@
 #pragma once
+
+#include <memory>
+
 #include "loop-analysis/isl-ir.hpp"
 #include "isl/polynomial.h"
+
+namespace analysis
+{
 
 /******************************************************************************
  * Interface
  *****************************************************************************/
-
-namespace analysis
-{
 
 struct LinkTransferInfo
 {
@@ -20,9 +23,10 @@ struct LinkTransferModel
   virtual LinkTransferInfo Apply(const Fill&, const Occupancy&) const = 0;
 };
 
+
 struct MulticastInfo
 {
-  isl::map reads;
+  Reads reads;
   isl_pw_qpolynomial* p_hops;
 
   /***************** Compatibility with Timeloop v2.0 ************************/
@@ -41,6 +45,7 @@ struct MulticastModel
 {
   virtual MulticastInfo Apply(const Fill&) const = 0;
 };
+
 
 struct SpatialReuseInfo
 {
@@ -61,14 +66,32 @@ struct SpatialReuseAnalysisInput
 
 struct SpatialReuseModels
 {
-  const LinkTransferModel& link_transfer_model;
-  const MulticastModel& multicast_model;
+  std::unique_ptr<LinkTransferModel> link_transfer_model;
+  std::unique_ptr<MulticastModel> multicast_model;
 
-  SpatialReuseModels(const LinkTransferModel&, const MulticastModel&);
+  template<typename LinkTransferModelT, typename... ArgsT>
+  void EmplaceLinkTransferModel(ArgsT&&... args)
+  {
+    link_transfer_model =
+      std::make_unique<LinkTransferModelT>(std::forward(args)...);
+  }
+
+  template<typename MulticastModelT, typename... ArgsT>
+  void EmplaceMulticastModel(ArgsT&&... args)
+  {
+    multicast_model = std::make_unique<MulticastModelT>(std::forward(args)...);
+  }
+
+  LinkTransferModel& GetLinkTransferModel();
+  const LinkTransferModel& GetLinkTransferModel() const;
+
+  MulticastModel& GetMulticastModel();
+  const MulticastModel& GetMulticastModel() const;
 };
 
-SpatialReuseInfo SpatialReuseAnalysis(SpatialReuseAnalysisInput input,
-                                      SpatialReuseModels models);
+SpatialReuseInfo SpatialReuseAnalysis(const SpatialReuseAnalysisInput& input,
+                                      const SpatialReuseModels& models);
+
 
 /******************************************************************************
  * Model Classes
@@ -83,11 +106,12 @@ class SimpleLinkTransferModel : public LinkTransferModel
   SimpleLinkTransferModel();
 
   LinkTransferInfo
-  Apply(const Fill& fills, const Occupancy& occupancies) const;
+  Apply(const Fill& fills, const Occupancy& occupancies) const override;
 
  private:
   isl::map connectivity_;
 };
+
 
 /**
  * @brief A multicast model for 2-dimensional array.
@@ -109,4 +133,5 @@ class SimpleMulticastModel : public MulticastModel
  private:
   isl::map connectivity_;
 };
+
 }

@@ -47,11 +47,7 @@ struct TilingCoefTracker
 
 };
 
-isl::map TilingCoefTrackerToMap(const TilingCoefTracker& tracker);
-
-LogicalBufTiling
-LogicalBufTilingFromMapping(const loop::Nest& nest,
-                            const problem::Workload& workload);
+isl::map TilingCoefTrackerToMap(TilingCoefTracker&& tracker);
 
 std::map<LogicalBuffer, Skew>
 LogicalBufSkewsFromMapping(const loop::Nest& mapping,
@@ -89,6 +85,7 @@ OccupanciesFromMapping(const loop::Nest& mapping,
 
   return result;
 }
+
 
 /******************************************************************************
  * Local function implementations

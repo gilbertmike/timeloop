@@ -86,19 +86,24 @@ std::pair<Occupancy, Fill> FillFromOccupancy(const Occupancy& occupancy)
       continue;
     }
 
+    isl_map_free(p_proj_occ);
     isl_map_free(p_reinserted_occ);
+
     auto p_time_shift = isl::map_to_shifted(
       isl_space_domain(isl_map_get_space(p_occ)),
       dim_idx,
       -1
     );
     auto p_occ_before = isl_map_apply_range(p_time_shift, isl_map_copy(p_occ));
-    auto p_fill = isl_map_subtract(p_occ, p_occ_before);
+    auto p_fill = isl_map_subtract(isl_map_copy(p_occ), p_occ_before);
 
-    return std::make_pair(occupancy, Fill(tags, isl::manage(p_fill)));
+    return std::make_pair(
+      Occupancy(tags, isl::manage(p_occ)),
+      Fill(tags, isl::manage(p_fill))
+    );
   }
 
-  return std::make_pair(occupancy, Fill(occupancy.dim_in_tags, occupancy.map));
+  return std::make_pair(occupancy, Fill(tags, isl::manage(p_occ)));
 }
 
 

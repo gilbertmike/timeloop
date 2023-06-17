@@ -1,6 +1,7 @@
 #pragma once
 
 #include <loop-analysis/isl-ir.hpp>
+#include <loop-analysis/spatial-analysis.hpp>
 
 namespace analysis
 {
@@ -8,7 +9,6 @@ namespace analysis
 struct LogicalBufferStats
 {
   const LogicalBuffer& buf;
-  const LogicalBuffer& parent_buf;
   Occupancy occupancy;
   Occupancy effective_occupancy;
   Fill fill;
@@ -16,13 +16,13 @@ struct LogicalBufferStats
   Reads parent_reads;
 
   /***************** Compatibility with Timeloop v2.0 ************************/
-  struct AccessStats
-  {
-    double accesses;
-    double hops;
-  };
-  std::map<std::pair<uint64_t, uint64_t>, AccessStats> compat_access_stats;
+
+  std::map<std::pair<uint64_t, uint64_t>, MulticastInfo::AccessStats>
+  compat_access_stats;
+
   /***************************************************************************/
+
+  LogicalBufferStats(const LogicalBuffer& buf);
 };
 
 struct ReuseAnalysisOutput

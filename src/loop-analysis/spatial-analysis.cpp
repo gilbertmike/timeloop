@@ -19,15 +19,44 @@ MulticastInfo::~MulticastInfo()
   // }
 }
 
-SpatialReuseInfo
-SpatialReuseAnalysis(SpatialReuseAnalysisInput input,
-                     SpatialReuseModels models)
+
+SpatialReuseAnalysisInput::SpatialReuseAnalysisInput(
+  const LogicalBuffer& buf,
+  const Fill& fill,
+  const Occupancy& occupancy
+) :
+  buf(buf), children_fill(fill), children_occupancy(occupancy)
+{
+}
+
+
+LinkTransferModel& SpatialReuseModels::GetLinkTransferModel()
+{
+  return *link_transfer_model;
+}
+const LinkTransferModel& SpatialReuseModels::GetLinkTransferModel() const
+{
+  return *link_transfer_model;
+}
+
+MulticastModel& SpatialReuseModels::GetMulticastModel()
+{
+  return *multicast_model;
+}
+const MulticastModel& SpatialReuseModels::GetMulticastModel() const
+{
+  return *multicast_model;
+}
+
+
+SpatialReuseInfo SpatialReuseAnalysis(const SpatialReuseAnalysisInput& input,
+                                      const SpatialReuseModels& models)
 {
   auto link_transfer_info =
-    models.link_transfer_model.Apply(input.children_fill,
-                                     input.children_occupancy);
+    models.GetLinkTransferModel().Apply(input.children_fill,
+                                        input.children_occupancy);
 
-  auto multicast_info = models.multicast_model.Apply(
+  auto multicast_info = models.GetMulticastModel().Apply(
     link_transfer_info.unfulfilled_fill
   );
 
@@ -42,8 +71,8 @@ SimpleLinkTransferModel::SimpleLinkTransferModel()
 {
   connectivity_ = isl::map(GetIslCtx(),
                           "{ [t, x, y] -> [t-1, x', y'] : "
-                          "  (x'=x-1 or x'=x+1) "
-                          "  and (y'=y-1 or y'=y+1) }");
+                          " (y'=y and x'=x-1) or (y'=y and x'=x+1) "
+                          " or (x'=x and y'=y-1) or (x'=x and y'=y+1) }");
 }
 
 LinkTransferInfo SimpleLinkTransferModel::Apply(
@@ -57,8 +86,16 @@ LinkTransferInfo SimpleLinkTransferModel::Apply(
     throw std::logic_error("unreachable");
   }
 
+  if (n < 3)
+  {
+    return LinkTransferInfo{
+      .link_transfer=Transfers(fill.dim_in_tags, fill.map.subtract(fill.map)),
+      .unfulfilled_fill=fill
+    };
+  }
+
   auto complete_connectivity =
-    isl::insert_equal_dims(connectivity_, 0, 0, n - 2 - 1);
+    isl::insert_equal_dims(connectivity_, 0, 0, n - 3);
   auto available_from_neighbors =
     complete_connectivity.apply_range(occupancy.map);
   auto fill_set = fill.map.intersect(available_from_neighbors);
@@ -69,6 +106,7 @@ LinkTransferInfo SimpleLinkTransferModel::Apply(
     .unfulfilled_fill=Fill(fill.dim_in_tags, remaining_fill)
   };
 }
+
 
 struct HopsAccesses
 {
@@ -221,6 +259,11 @@ MulticastInfo SimpleMulticastModel::Apply(const Fill& fill) const
     stats.accesses = hops_accesses.accesses;
     stats.hops = hops_accesses.hops / hops_accesses.accesses;
   }
+
+  multicast_info.reads = Reads(
+    fill.dim_in_tags,
+    fill.map.subtract(fill.map)
+  );
 
   return multicast_info;
 }

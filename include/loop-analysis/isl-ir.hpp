@@ -118,6 +118,7 @@ struct Skew
   std::vector<spacetime::Dimension> dim_in_tags;
   isl::map map;
 
+  Skew();
   Skew(const std::vector<spacetime::Dimension>& dim_in_tags, isl::map map);
 };
 
@@ -130,6 +131,7 @@ struct Occupancy
   std::vector<spacetime::Dimension> dim_in_tags;
   isl::map map;
 
+  Occupancy();
   Occupancy(const std::vector<spacetime::Dimension>& dim_in_tags,
             isl::map map);
 };
@@ -142,6 +144,7 @@ struct Transfers
   std::vector<spacetime::Dimension> dim_in_tags;
   isl::map map;
 
+  Transfers();
   Transfers(const std::vector<spacetime::Dimension>& dim_in_tags,
             isl::map map);
 };
@@ -154,6 +157,7 @@ struct Fill
   std::vector<spacetime::Dimension> dim_in_tags;
   isl::map map;
 
+  Fill();
   Fill(const std::vector<spacetime::Dimension>& dim_in_tags, isl::map map);
 };
 
@@ -165,6 +169,7 @@ struct Reads
   std::vector<spacetime::Dimension> dim_in_tags;
   isl::map map;
 
+  Reads();
   Reads(const std::vector<spacetime::Dimension>& dim_in_tags, isl::map map);
 };
 
