@@ -143,6 +143,14 @@ bool nodeEq(config::CompoundConfigNode CNode, YAML::Node YNode,
         default:
             break;
     }
+    
+    // prints out key which failed to pass node
+    // TODO:: Find a better way to locate where a failure is.
+    if (!nodePass)
+    {
+        std::cout << key << std::endl;
+        BOOST_CHECK(nodePass);
+    }
     return nodePass;
 }
 
