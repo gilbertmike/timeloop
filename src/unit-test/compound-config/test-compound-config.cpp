@@ -73,7 +73,7 @@ bool testSequenceLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, co
     auto childYNode = YNode[key];
 
     // checks that the CNode is a list/array
-    BOOST_CHECK(CNode.isList() || CNode.isArray());
+    BOOST_CHECK(childCNode.isList() || childCNode.isArray());
 
     // goes through all elements in the sequence
     for (int i = 0; (std::size_t) i < childYNode.size(); i++)
@@ -95,7 +95,7 @@ bool testMapLookup(config::CompoundConfigNode& CNode, YAML::Node&YNode, const st
     auto childYNode = YNode[key];
 
     // checks the new CNode agrees the next value is a map
-    BOOST_CHECK(CNode.isMap());
+    BOOST_CHECK(childCNode.isMap());
 
     return testMapLookup(childCNode, childYNode);
 }
