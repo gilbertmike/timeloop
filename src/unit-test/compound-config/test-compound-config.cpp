@@ -72,6 +72,9 @@ bool testSequenceLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, co
     auto childCNode = CNode.lookup(key);
     auto childYNode = YNode[key];
 
+    // checks that the CNode is a list/array
+    BOOST_CHECK(CNode.isList() || CNode.isArray());
+
     // goes through all elements in the sequence
     for (int i = 0; (std::size_t) i < childYNode.size(); i++)
     {
@@ -87,8 +90,13 @@ bool testSequenceLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, co
 // fetches child values as C++ doesn't like temporary values
 bool testMapLookup(config::CompoundConfigNode& CNode, YAML::Node&YNode, const std::string& key)
 {
+    // unpacks the new root values to base our map lookup on
     auto childCNode = CNode.lookup(key);
     auto childYNode = YNode[key];
+
+    // checks the new CNode agrees the next value is a map
+    BOOST_CHECK(CNode.isMap());
+
     return testMapLookup(childCNode, childYNode);
 }
 // tests the CCN lookup functions provided a given root node. Treats all input nodes as maps.
@@ -122,6 +130,7 @@ bool nodeEq(config::CompoundConfigNode CNode, YAML::Node YNode,
     {
         // null should pull out the same thing as scalar
         case YAML::NodeType::Null:
+
             break;
         // tests all possible scalar output values
         case YAML::NodeType::Scalar:
@@ -148,6 +157,7 @@ bool nodeEq(config::CompoundConfigNode CNode, YAML::Node YNode,
             nodePass = testMapLookup(CNode, YNode, key);
             break;
         case YAML::NodeType::Undefined:
+
             break;
         default:
             break;
