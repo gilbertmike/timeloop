@@ -41,10 +41,18 @@ bool testScalarLookup(config::CompoundConfigNode& CNode, YAML::Node& YNode, cons
         T expectedScalar, actualScalar;
         // value resolution
         expectedScalar = YNode[key].as<T>();
-        actualScalar = CNode.lookupValue(key, expectedScalar);
+        // if successful resolution by CNode
+        if (CNode.lookupValue(key, actualScalar))
+        {
+            // check equality
+            BOOST_CHECK_EQUAL(expectedScalar, actualScalar);
+        // otherwise return failure since no resolution
+        } else
+        {
+            return false;
+        }
 
-        BOOST_CHECK_EQUAL(expectedScalar, actualScalar);
-        // equality check
+        // and propagate equality check
         return expectedScalar == actualScalar;
     } catch(const YAML::TypedBadConversion<T>& e) {
         // defaults to false on bad conversion
