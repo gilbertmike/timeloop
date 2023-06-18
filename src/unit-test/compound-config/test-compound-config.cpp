@@ -21,13 +21,13 @@ std::map<std::string, std::vector<std::string>> FILES = {
     {
         "accelergy-project/2020.ispass/timeloop/01/", {
             "1level.arch.yaml",
-            /*"conv1d-1level.map.yaml",
+            "conv1d-1level.map.yaml",
             "conv1d.prob.yaml",
             "timeloop-model.ART_summary.yaml",
             "timeloop-model.ART.yaml",
             "timeloop-model.ERT_summary.yaml",
             "timeloop-model.ERT.yaml",
-            "timeloop-model.flattened_architecture.yaml",*/
+            "timeloop-model.flattened_architecture.yaml",
         }
     }
 };
