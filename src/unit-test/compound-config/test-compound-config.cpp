@@ -125,21 +125,21 @@ bool nodeEq(config::CompoundConfigNode CNode, YAML::Node YNode,
             break;
         // tests all possible scalar output values
         case YAML::NodeType::Scalar:
-            nodePass = nodePass ||
-                        // tests precision values
-                       testScalarLookup<double>(CNode, YNode, key) ||
-                       testScalarLookup<bool>(CNode, YNode, key) ||
-                       testScalarLookup<int>(CNode, YNode, key) ||
-                       testScalarLookup<unsigned int>(CNode, YNode, key) ||
-                       testScalarLookup<long long>(CNode, YNode, key) ||
-                       testScalarLookup<unsigned long long>(CNode, YNode, key) ||
-                       // tests floating points
-                       testScalarLookup<double>(CNode, YNode, key) ||
-                       testScalarLookup<float>(CNode, YNode, key) ||
-                       // tests strings
-                       // TODO:: This doesn't compile figure it out later
-                       // BOOST_CHECK(testScalarLookup<const char *>(root, node, key));
-                       testScalarLookup<std::string>(CNode, YNode, key);
+            // tests precision values
+            nodePass = testScalarLookup<double>(CNode, YNode, key) || nodePass;
+            nodePass = testScalarLookup<bool>(CNode, YNode, key) || nodePass;
+            nodePass = testScalarLookup<int>(CNode, YNode, key) || nodePass;
+            nodePass = testScalarLookup<unsigned int>(CNode, YNode, key) || nodePass;
+            // tests long long values
+            nodePass = testScalarLookup<long long>(CNode, YNode, key) || nodePass;
+            nodePass = testScalarLookup<unsigned long long>(CNode, YNode, key) || nodePass;
+            // tests floating points
+            nodePass = testScalarLookup<double>(CNode, YNode, key) || nodePass;
+            nodePass = testScalarLookup<float>(CNode, YNode, key) || nodePass;
+            // tests strings
+            // TODO:: This doesn't compile figure it out later
+            // BOOST_CHECK(testScalarLookup<const char *>(root, node, key));
+            nodePass = testScalarLookup<std::string>(CNode, YNode, key) || nodePass;
             break;
         case YAML::NodeType::Sequence:
             nodePass = testSequenceLookup(CNode, YNode, key);
