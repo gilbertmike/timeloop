@@ -6,6 +6,50 @@ Spatial::Spatial(int spatial_dim) : spatial_dim(spatial_dim)
 {
 }
 
+std::ostream& operator<<(std::ostream& os, const Temporal&)
+{
+  os << "Temporal()";
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Spatial& t)
+{
+  os << "Spatial(" << t.spatial_dim << ")";
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Sequential&)
+{
+  os << "Sequential()";
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const PipelineTemporal&)
+{
+  os << "PipelineTemporal()";
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const PipelineSpatial&)
+{
+  os << "PipelineSpatial()";
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const SpaceTime& t)
+{
+  std::visit(
+    [&os](auto&& arg)
+    {
+      os << arg;
+    },
+    t
+  );
+
+  return os;
+}
+
+
 LogicalBuffer::LogicalBuffer(BufferID buffer_id,
                              DataSpaceID dspace_id,
                              mapping::NodeID branch_leaf_id) :

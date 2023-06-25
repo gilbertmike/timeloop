@@ -69,6 +69,13 @@ using SpaceTime =
     PipelineSpatial
   >;
 
+std::ostream& operator<<(std::ostream& os, const Temporal& t);
+std::ostream& operator<<(std::ostream& os, const Spatial& t);
+std::ostream& operator<<(std::ostream& os, const Sequential& t);
+std::ostream& operator<<(std::ostream& os, const PipelineTemporal& t);
+std::ostream& operator<<(std::ostream& os, const PipelineSpatial& t);
+std::ostream& operator<<(std::ostream& os, const SpaceTime& t);
+
 struct LogicalBuffer
 {
   BufferID buffer_id;
