@@ -2,6 +2,10 @@
 
 namespace analysis {
 
+Spatial::Spatial(int spatial_dim) : spatial_dim(spatial_dim)
+{
+}
+
 LogicalBuffer::LogicalBuffer(BufferID buffer_id,
                              DataSpaceID dspace_id,
                              mapping::NodeID branch_leaf_id) :
@@ -45,8 +49,7 @@ Skew::Skew()
 {
 }
 
-Skew::Skew(const std::vector<spacetime::Dimension>& dim_in_tags,
-                     isl::map map) :
+Skew::Skew(const std::vector<SpaceTime>& dim_in_tags, isl::map map) :
   dim_in_tags(dim_in_tags), map(std::move(map))
 {
 }
@@ -56,8 +59,7 @@ Occupancy::Occupancy()
 {
 }
 
-Occupancy::Occupancy(const std::vector<spacetime::Dimension>& dim_in_tags,
-                     isl::map map) :
+Occupancy::Occupancy(const std::vector<SpaceTime>& dim_in_tags, isl::map map) :
   dim_in_tags(dim_in_tags), map(std::move(map))
 {
 }
@@ -66,8 +68,7 @@ Transfers::Transfers()
 {
 }
 
-Transfers::Transfers(const std::vector<spacetime::Dimension>& dim_in_tags,
-                     isl::map map) :
+Transfers::Transfers(const std::vector<SpaceTime>& dim_in_tags, isl::map map) :
   dim_in_tags(dim_in_tags), map(std::move(map))
 {
 }
@@ -77,8 +78,7 @@ Fill::Fill()
 {
 }
 
-Fill::Fill(const std::vector<spacetime::Dimension>& dim_in_tags,
-           isl::map map) :
+Fill::Fill(const std::vector<SpaceTime>& dim_in_tags, isl::map map) :
   dim_in_tags(dim_in_tags), map(std::move(map))
 {
 }
@@ -87,8 +87,7 @@ Reads::Reads()
 {
 }
 
-Reads::Reads(const std::vector<spacetime::Dimension>& dim_in_tags,
-             isl::map map) :
+Reads::Reads(const std::vector<SpaceTime>& dim_in_tags, isl::map map) :
   dim_in_tags(dim_in_tags), map(std::move(map))
 {
 }
