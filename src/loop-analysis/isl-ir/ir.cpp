@@ -1,54 +1,8 @@
 #include "loop-analysis/isl-ir.hpp"
 
+#include "isl-wrapper/isl-functions.hpp"
+
 namespace analysis {
-
-Spatial::Spatial(int spatial_dim) : spatial_dim(spatial_dim)
-{
-}
-
-std::ostream& operator<<(std::ostream& os, const Temporal&)
-{
-  os << "Temporal()";
-  return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const Spatial& t)
-{
-  os << "Spatial(" << t.spatial_dim << ")";
-  return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const Sequential&)
-{
-  os << "Sequential()";
-  return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const PipelineTemporal&)
-{
-  os << "PipelineTemporal()";
-  return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const PipelineSpatial&)
-{
-  os << "PipelineSpatial()";
-  return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const SpaceTime& t)
-{
-  std::visit(
-    [&os](auto&& arg)
-    {
-      os << arg;
-    },
-    t
-  );
-
-  return os;
-}
-
 
 LogicalBuffer::LogicalBuffer(BufferID buffer_id,
                              DataSpaceID dspace_id,
@@ -80,15 +34,6 @@ bool LogicalBuffer::operator==(const LogicalBuffer& other) const
           && branch_leaf_id == other.branch_leaf_id;
 }
 
-std::ostream& operator<<(std::ostream& os, const LogicalBuffer& buf)
-{
-  os << "LogicalBuffer(";
-  os << buf.buffer_id << ", " << buf.dspace_id << ", " << buf.branch_leaf_id;
-  os << ")";
-  return os;
-}
-
-
 Skew::Skew()
 {
 }
@@ -96,6 +41,10 @@ Skew::Skew()
 Skew::Skew(const std::vector<SpaceTime>& dim_in_tags, isl::map map) :
   dim_in_tags(dim_in_tags), map(std::move(map))
 {
+  if (dim_in_tags.size() != isl::dim(map, isl_dim_in))
+  {
+    throw std::logic_error("mismatched space-time tags and map dimensions");
+  }
 }
 
 

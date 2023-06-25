@@ -103,6 +103,11 @@ OccupanciesFromMapping(mapping::FusedMapping& mapping,
   auto buf_skew = LogicalBufSkewsFromMapping(mapping);
   for (auto& [buf, skew] : buf_skew)
   {
+    if (gDumpIslIr)
+    {
+      std::cout << buf << " has skew: " << skew << std::endl;
+    }
+
     auto einsum =
       std::get<mapping::Compute>(mapping.NodeAt(buf.branch_leaf_id)).kernel;
     auto dspace = buf.dspace_id;
@@ -130,6 +135,12 @@ OccupanciesFromMapping(mapping::FusedMapping& mapping,
       isl::project_dim_in_after(tiling.apply_range(accesses),
                                 isl::dim(skew.map, isl_dim_out))
     );
+
+    if (gDumpIslIr)
+    {
+      std::cout << buf << " has occ: " << occupancy << std::endl;
+    }
+
     occupancies.emplace(std::make_pair(buf,
                                        Occupancy(skew.dim_in_tags,
                                                  std::move(occupancy))));

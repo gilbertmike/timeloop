@@ -150,6 +150,8 @@ struct Skew
   Skew(const std::vector<SpaceTime>& dim_in_tags, isl::map map);
 };
 
+std::ostream& operator<<(std::ostream& os, const Skew& s);
+
 /**
  * @brief Space-Time -> Data of a logical buffer. A complete description of
  *        data held in a logical buffer.

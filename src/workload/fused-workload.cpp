@@ -23,6 +23,7 @@ EinsumId FusedWorkload::NewEinsum(std::string name)
     throw std::logic_error("there is already an einsum with name " + name);
   }
   einsum_name_to_id_[name] = next_einsum_id;
+  einsum_id_to_name_[next_einsum_id] = name;
 
   auto vertex = boost::add_vertex(einsum_graph_);
   einsum_graph_[vertex].einsum_or_dspace = EinsumOrDspace::EINSUM;
@@ -44,6 +45,7 @@ DataSpaceId FusedWorkload::NewDataSpace(std::string name)
     throw std::logic_error("there is already a dspace with name " + name);
   }
   dspace_name_to_id_[name] = next_dspace_id;
+  dspace_id_to_name_[next_dspace_id] = name;
 
   auto vertex = boost::add_vertex(einsum_graph_);
   einsum_graph_[vertex].einsum_or_dspace = EinsumOrDspace::DATASPACE;
@@ -84,6 +86,26 @@ const std::map<std::string, DimensionId>&
 FusedWorkload::DimensionNameToId() const
 {
   return dim_name_to_id_;
+}
+
+DataSpaceId FusedWorkload::GetDspaceId(const std::string& name) const
+{
+  auto it = dspace_name_to_id_.find(name);
+  if (it == dspace_name_to_id_.end())
+  {
+    throw std::out_of_range("dataspace " + name + " not in workload");
+  }
+  return it->second;
+}
+
+DimensionId FusedWorkload::GetDimensionId(const std::string& name) const
+{
+  auto it = dim_name_to_id_.find(name);
+  if (it == dim_name_to_id_.end())
+  {
+    throw std::out_of_range("dimension " + name + " not in workload");
+  }
+  return it->second;
 }
 
 void FusedWorkload::AddDimToDspace(DataSpaceId dspace, DimensionId dim)
@@ -133,6 +155,7 @@ void FusedWorkload::SetEinsumProjection(EinsumId einsum, DataSpaceId dspace,
   {
     write_tensors_[einsum].insert(dspace);
     write_einsums_[dspace] = einsum;
+    writes_.emplace(std::pair(std::pair(einsum, dspace), proj.as_map()));
     write_affs_.emplace(std::pair(std::pair(einsum, dspace), std::move(proj)));
 
     boost::add_edge(
@@ -145,6 +168,7 @@ void FusedWorkload::SetEinsumProjection(EinsumId einsum, DataSpaceId dspace,
   {
     read_tensors_[einsum].insert(dspace);
     read_einsums_[dspace].insert(einsum);
+    reads_.emplace(std::pair(std::pair(einsum, dspace), proj.as_map()));
     read_affs_.emplace(std::pair(std::pair(einsum, dspace), std::move(proj)));
 
     boost::add_edge(
@@ -228,6 +252,26 @@ const isl::set& FusedWorkload::EinsumOspaceBound(EinsumId einsum) const
 
 const isl::set& FusedWorkload::DataSpaceBound(DataSpaceId dspace) const
 {
+  auto it = data_spaces_.find(dspace);
+  if (it == data_spaces_.end())
+  {
+    auto n_dims = dspace_dims_.at(dspace).size();
+    data_spaces_.emplace_hint(
+      it,
+      std::make_pair(
+        dspace,
+        isl::set::universe(isl::manage(isl_space_set_tuple_name(
+            isl_space_set_alloc(
+            GetIslCtx().get(),
+            0,
+            n_dims
+          ),
+          isl_dim_set,
+          dspace_id_to_name_.at(dspace).c_str()
+        )))
+      )
+    );
+  }
   return data_spaces_.at(dspace);
 }
 
@@ -257,7 +301,8 @@ FusedWorkload ParseFusedWorkload(const config::CompoundConfigNode& cfg)
       workload.AddDimToEinsumOspace(einsum, dim);
     }
 
-    auto prologue = "{ [" + boost::algorithm::join(dim_names, ", ") + "] ";
+    auto prologue = "{ " + einsum_name + "["
+      + boost::algorithm::join(dim_names, ", ") + "] ";
     auto epilogue = " }";
 
     auto instance = std::string();
@@ -290,7 +335,7 @@ FusedWorkload ParseFusedWorkload(const config::CompoundConfigNode& cfg)
       dspace_cfg.lookupValue("projection", projection_str);
       auto proj = isl::multi_aff(
         GetIslCtx(),
-        prologue + " -> " + projection_str + epilogue
+        prologue + " -> " + dspace_name + projection_str + epilogue
       );
 
       auto dspace = DataSpaceId();
