@@ -39,6 +39,7 @@
 
 #include "mapping/fused-mapping.hpp"
 #include "mapping/mapping.hpp"
+#include "workload/fused-workload.hpp"
 #include "workload/workload.hpp"
 
 namespace analysis
@@ -46,7 +47,7 @@ namespace analysis
 
 using DataSpaceID = problem::DataSpaceId;
 using FactorizedDimensionID = problem::Shape::FactorizedDimensionID;
-using EinsumID = size_t;
+using EinsumID = problem::EinsumId;
 using BufferID = mapping::BufferID;
 
 struct Temporal {};
@@ -188,6 +189,8 @@ struct Fill
   Fill();
   Fill(const std::vector<SpaceTime>& dim_in_tags, isl::map map);
 };
+
+std::ostream& operator<<(std::ostream& os, const Fill& s);
 
 /**
  * @brief Space-Time -> Reads to a logical buffer.

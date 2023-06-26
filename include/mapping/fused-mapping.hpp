@@ -89,8 +89,6 @@ struct Storage
 
 struct Compute
 {
-  // TODO: This should only be defined once somewhere, but can be found here
-  // and in isl-ir.hpp
   problem::EinsumId kernel;
   /**
    * @brief An explicit tiling specifiction. E.g., [p_1, p_0] -> [4*p_1+p_0]
@@ -132,6 +130,18 @@ inline constexpr bool IsLoopV = std::is_same_v<T, For> ||
 template<typename T>
 inline constexpr bool IsBranchV = std::is_same_v<T, Sequential> ||
                                   std::is_same_v<T, Pipeline>;
+
+template<typename T>
+inline constexpr bool HasOneChildV = std::is_same_v<T, For> ||
+                                     std::is_same_v<T, ParFor> ||
+                                     std::is_same_v<T, Storage> ||
+                                     std::is_same_v<T, Root>;
+
+template<typename T>
+inline constexpr bool HasManyChildrenV = IsBranchV<T>;
+
+template<typename T>
+inline constexpr bool HasNoChildV = std::is_same_v<T, Compute>;
 
 NodeID GetNodeId(const MappingNodeTypes& node);
 
