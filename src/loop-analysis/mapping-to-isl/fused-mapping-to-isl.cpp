@@ -37,8 +37,15 @@ OccupanciesFromMapping(mapping::FusedMapping& mapping,
   {
     for (const auto& [node_id, tiling] : branch_tiling)
     {
-      std::cout << "node " << node_id << " has tiling: " << tiling << std::endl;
+      std::cout << "[Tiling]Node(" << node_id << "): " << tiling << std::endl;
     }
+  }
+
+  for (const auto& [node_id, tiling] : branch_tiling)
+  {
+    std::cout << "[Ops]Node(" << node_id << "): "
+      << isl_pw_qpolynomial_to_str(isl_pw_qpolynomial_sum(isl_map_card(tiling.copy())))
+      << std::endl;
   }
 
   std::map<LogicalBuffer, Occupancy> occupancies;

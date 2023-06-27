@@ -43,14 +43,20 @@ map map_to_all_at_dim(space domain_space, size_t pos);
 
 map fix_si(map map, isl_dim_type dim_type, size_t pos, int val);
 
-map
-insert_equal_dims(map map, size_t in_pos, size_t out_pos, size_t n);
+map insert_equal_dims(map map, size_t in_pos, size_t out_pos, size_t n);
+
+__isl_give isl_map*
+insert_equal_dims(
+  __isl_take isl_map* p_map, size_t in_pos, size_t out_pos, size_t n
+);
 
 multi_aff
 insert_equal_dims(multi_aff maff, size_t in_pos, size_t out_pos, size_t n);
 
-isl_multi_aff*
-insert_equal_dims(isl_multi_aff* p_maff, int in_pos, int out_pos, int n);
+__isl_give isl_multi_aff*
+insert_equal_dims(
+  __isl_take isl_multi_aff* p_maff, int in_pos, int out_pos, int n
+);
 
 map insert_dummy_dim_ins(map map, size_t pos, size_t n);
 

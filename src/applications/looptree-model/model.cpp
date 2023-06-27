@@ -20,6 +20,15 @@
 //                Application                 //
 //--------------------------------------------//
 
+char* isl_pw_qpolynomial_fold_to_str(isl_pw_qpolynomial_fold* pwqf)
+{
+  auto p_printer = isl_printer_to_str(GetIslCtx().get());
+  p_printer = isl_printer_print_pw_qpolynomial_fold(p_printer, pwqf);
+  auto p_str = isl_printer_get_str(p_printer);
+  isl_printer_free(p_printer);
+  return p_str;
+}
+
 template <class Archive>
 void Application::serialize(Archive& ar, const unsigned int version)
 {
@@ -154,7 +163,23 @@ Application::Application(config::CompoundConfig* config,
       )
     );
 
-    std::cout << buf << "has fill: " << result.fill << std::endl;
+    auto p_fill = result.fill.map.copy();
+    auto p_fill_count = isl_pw_qpolynomial_sum(isl_map_card(p_fill));
+
+    auto p_occ = result.effective_occupancy.map.copy();
+    isl_bool tight;
+    auto p_occ_count = isl_pw_qpolynomial_bound(
+      isl_map_card(p_occ),
+      isl_fold_max,
+      &tight
+    );
+    assert(tight == isl_bool_true);
+
+    std::cout << "[Occupancy]" << buf << ": "
+      << isl_pw_qpolynomial_fold_to_str(p_occ_count) << std::endl;
+    std::cout << "[Fill]" << buf << ": "
+      << isl_pw_qpolynomial_to_str(p_fill_count) << std::endl;
+    isl_pw_qpolynomial_free(p_fill_count);
   }
 
   // // for (const auto& [buf, fill] : fills)

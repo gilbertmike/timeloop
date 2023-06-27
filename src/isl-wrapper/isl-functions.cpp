@@ -140,10 +140,15 @@ isl::map fix_si(isl::map map, isl_dim_type dim_type, size_t pos, int val)
   return isl::manage(isl_map_fix_si(map.release(), dim_type, pos, val));
 }
 
-isl::map
-insert_equal_dims(isl::map map, size_t in_pos, size_t out_pos, size_t n)
+map insert_equal_dims(map map, size_t in_pos, size_t out_pos, size_t n)
 {
-  auto p_map = map.release();
+  return isl::manage(insert_equal_dims(map.release(), in_pos, out_pos, n));
+}
+
+isl_map*
+insert_equal_dims(__isl_take isl_map* p_map, size_t in_pos, size_t out_pos,
+                  size_t n)
+{
   p_map = isl_map_insert_dims(p_map, isl_dim_in, in_pos, n);
   p_map = isl_map_insert_dims(p_map, isl_dim_out, out_pos, n);
 
@@ -156,8 +161,8 @@ insert_equal_dims(isl::map map, size_t in_pos, size_t out_pos, size_t n)
     p_map = isl_map_add_constraint(p_map, c);
   }
   isl_local_space_free(p_ls);
-  
-  return isl::manage(p_map);
+
+  return p_map;
 }
 
 isl::multi_aff
@@ -270,56 +275,45 @@ isl::map ConstraintDimEquals(isl::map map, size_t n_dims)
 isl::map MapToPriorData(size_t n_in_dims, size_t top)
 {
   isl_space* p_space;
-  isl_basic_map* p_tmp_map;
   isl_map* p_map;
   isl_local_space* p_ls;
   isl_constraint* p_c;
 
   // Goal: { [i0, ..., i{n_in_dims-1}] -> [i0, ..., i{top}-1, o{top+1}, ..., o{n_in_dims}] }
   p_space = isl_space_alloc(GetIslCtx().get(), 0, n_in_dims, n_in_dims);
-  p_map = isl_map_universe(isl_space_copy(p_space));
+  p_map = isl_map_empty(isl_space_copy(p_space));
   p_ls = isl_local_space_from_space(p_space);
 
   if (top > 0)
   {
-    p_tmp_map = isl_basic_map_universe(isl_space_copy(p_space));
+    auto p_tmp_map = isl_map_universe(isl_space_copy(p_space));
     for (size_t i = 0; i < top-1; ++i)
     {
       p_c = isl_constraint_alloc_equality(isl_local_space_copy(p_ls));
       p_c = isl_constraint_set_coefficient_si(p_c, isl_dim_out, i, 1);
       p_c = isl_constraint_set_coefficient_si(p_c, isl_dim_in, i, -1);
-      p_tmp_map = isl_basic_map_add_constraint(p_tmp_map, p_c);
+      p_tmp_map = isl_map_add_constraint(p_tmp_map, p_c);
     }
 
     p_c = isl_constraint_alloc_equality(isl_local_space_copy(p_ls));
     p_c = isl_constraint_set_coefficient_si(p_c, isl_dim_out, top-1, 1);
     p_c = isl_constraint_set_coefficient_si(p_c, isl_dim_in, top-1, -1);
     p_c = isl_constraint_set_constant_si(p_c, 1);
-    p_tmp_map = isl_basic_map_add_constraint(p_tmp_map, p_c);
+    p_tmp_map = isl_map_add_constraint(p_tmp_map, p_c);
 
-    p_map = isl_map_intersect(p_map, isl_map_from_basic_map(p_tmp_map));
+    p_map = isl_map_union(p_map, p_tmp_map);
   }
 
-  if (top > 0 && top < n_in_dims)
+  if (top < n_in_dims)
   {
-    p_tmp_map = isl_basic_map_universe(isl_space_copy(p_space));
-    for (size_t i = 0; i < top; ++i)
-    {
-      p_c = isl_constraint_alloc_equality(isl_local_space_copy(p_ls));
-      p_c = isl_constraint_set_coefficient_si(p_c, isl_dim_out, i, 1);
-      p_c = isl_constraint_set_coefficient_si(p_c, isl_dim_in, i, -1);
-      p_tmp_map = isl_basic_map_add_constraint(p_tmp_map, p_c);
-    }
+    auto p_tmp_map = isl_map_lex_gt(isl_space_set_alloc(
+      GetIslCtx().get(),
+      isl_map_dim(p_map, isl_dim_param),
+      n_in_dims - top
+    ));
+    p_tmp_map = insert_equal_dims(p_tmp_map, 0, 0, top);
 
-    for (auto i = top; i < n_in_dims; ++i)
-    {
-      p_c = isl_constraint_alloc_inequality(isl_local_space_copy(p_ls));
-      p_c = isl_constraint_set_coefficient_si(p_c, isl_dim_out, i, -1);
-      p_c = isl_constraint_set_coefficient_si(p_c, isl_dim_in, i, 1);
-      p_c = isl_constraint_set_constant_si(p_c, -1);
-      p_tmp_map = isl_basic_map_add_constraint(p_tmp_map, p_c);
-    }
-    p_map = isl_map_union(p_map, isl_map_from_basic_map(p_tmp_map));
+    p_map = isl_map_union(p_map, p_tmp_map);
   }
 
   isl_local_space_free(p_ls);
