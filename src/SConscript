@@ -129,6 +129,7 @@ loop-analysis/coordinate-space-tile-info.cpp
 loop-analysis/logical-buffer.cpp
 loop-analysis/loop-state.cpp
 loop-analysis/mapping-to-isl/fused-mapping-to-isl.cpp
+loop-analysis/mapping-to-isl/latency-aggregator.cpp
 loop-analysis/mapping-to-isl/mapping-to-isl.cpp
 loop-analysis/isl-ir/ir.cpp
 loop-analysis/isl-ir/input-output.cpp

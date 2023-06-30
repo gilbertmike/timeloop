@@ -150,9 +150,10 @@ Application::Application(config::CompoundConfig* config,
   mapping::FusedMapping mapping =
     mapping::ParseMapping(rootNode.lookup("mapping"), workload);
 
-  auto occupancies = analysis::OccupanciesFromMapping(mapping, workload);
+  auto mapping_analysis_result =
+    analysis::OccupanciesFromMapping(mapping, workload);
 
-  for (const auto& [buf, occ] : occupancies)
+  for (const auto& [buf, occ] : mapping_analysis_result.lbuf_to_occupancy)
   {
     auto result = analysis::TemporalReuseAnalysis(
       analysis::TemporalReuseAnalysisInput(
@@ -180,7 +181,33 @@ Application::Application(config::CompoundConfig* config,
     std::cout << "[Fill]" << buf << ": "
       << isl_pw_qpolynomial_to_str(p_fill_count) << std::endl;
     isl_pw_qpolynomial_free(p_fill_count);
+
   }
+
+  for (const auto& [compute, tiling] : mapping_analysis_result.branch_tiling)
+  {
+    auto p_ops = isl_map_card(tiling.copy());
+    std::cout << "[Operations]" << compute << ": "
+      << isl_pw_qpolynomial_to_str(p_ops) << std::endl;
+
+    auto assumed_parallelism =
+      mapping_analysis_result.compute_to_assumed_parallelism.at(compute);
+    auto p_parallelism = isl_val_int_from_si(
+      GetIslCtx().get(),
+      static_cast<int>(assumed_parallelism)
+    );
+    auto p_latency = isl_pw_qpolynomial_scale_down_val(
+      isl_pw_qpolynomial_copy(p_ops),
+      p_parallelism
+    );
+    mapping_analysis_result.compute_latency_aggregator.SetLatency(
+      compute,
+      p_latency
+    );
+    isl_pw_qpolynomial_free(p_ops);
+  }
+
+  mapping_analysis_result.compute_latency_aggregator.CalculateLatency();
 
   // // for (const auto& [buf, fill] : fills)
   // // {

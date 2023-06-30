@@ -18,6 +18,8 @@ namespace analysis
 /******************************************************************************
  * Local declarations
  *****************************************************************************/
+std::map<mapping::NodeID, double>
+GetParallelism(mapping::FusedMapping& mapping);
 
 BranchTilings TilingFromMapping(mapping::FusedMapping& mapping,
                                 const problem::FusedWorkload& workload);
@@ -28,10 +30,18 @@ LogicalBufSkewsFromMapping(mapping::FusedMapping& mapping);
 /******************************************************************************
  * Global function implementations
  *****************************************************************************/
-std::map<LogicalBuffer, Occupancy>
+
+MappingAnalysisResult
 OccupanciesFromMapping(mapping::FusedMapping& mapping,
                        const problem::FusedWorkload& workload)
 {
+  MappingAnalysisResult result;
+
+  result.compute_latency_aggregator = CreateLatencyAggregatorFromMapping(
+    mapping
+  );
+  result.compute_to_assumed_parallelism = GetParallelism(mapping);
+
   auto branch_tiling = analysis::TilingFromMapping(mapping, workload);
   if (gDumpIslIr)
   {
@@ -95,13 +105,69 @@ OccupanciesFromMapping(mapping::FusedMapping& mapping,
                                                  std::move(occupancy))));
   }
 
-  return occupancies;
+  result.lbuf_to_occupancy = std::move(occupancies);
+  result.branch_tiling = std::move(branch_tiling);
+
+  return result;
 }
 
 /******************************************************************************
  * Local function implementations
  *****************************************************************************/
 
+std::map<mapping::NodeID, double>
+GetParallelism(mapping::FusedMapping& mapping)
+{
+  using namespace problem;
+
+  auto result = std::map<mapping::NodeID, double>();
+
+  auto root = mapping.GetRoot().id;
+  auto dfs_stack = std::vector<mapping::NodeID>();
+  dfs_stack.push_back(root);
+
+  while (dfs_stack.size() > 0)
+  {
+    auto node_id = dfs_stack.back();
+    dfs_stack.pop_back();
+
+    const auto& node = mapping.NodeAt(node_id);
+    std::visit(
+      [&dfs_stack, &result, &node_id](auto&& node)
+      {
+        using T = std::decay_t<decltype(node)>;
+        if constexpr (mapping::HasOneChildV<T>)
+        {
+          dfs_stack.push_back(*node.child);
+        }
+        else if constexpr (mapping::HasManyChildrenV<T>)
+        {
+          for (const auto& child : node.children)
+          {
+            dfs_stack.push_back(child);
+          }
+        }
+        else if constexpr (std::is_same_v<T, mapping::Compute>)
+        {
+          if (node.parallelism)
+          {
+            result.emplace(std::make_pair(
+              node_id,
+              *node.parallelism
+            ));
+          }
+        }
+        else
+        {
+          throw std::logic_error("unknown mapping node type");
+        }
+      },
+      node
+    );
+  }
+
+  return result;
+}
 std::map<mapping::NodeID, std::set<problem::EinsumId>>
 GetMappingGroupEinsums(mapping::FusedMapping& mapping)
 {

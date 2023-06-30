@@ -129,7 +129,19 @@ NodeID CompoundConfigNodeToMapping(FusedMapping& mapping,
   {
     cfg.lookupValue("einsum", einsum_name);
     auto einsum = workload.EinsumNameToId().at(einsum_name);
-    return mapping.AddChild<Compute>(parent_id, einsum);
+    auto parallelism = std::optional<double>();
+    if (cfg.exists("parallelism"))
+    {
+      double parallelism_val;
+      cfg.lookupValue("parallelism", parallelism_val);
+      parallelism = parallelism_val;
+    }
+    return mapping.AddChild<Compute>(
+      parent_id,
+      einsum,
+      parallelism,
+      std::nullopt
+    );
   }
   else if (type == "pipeline")
   {

@@ -96,11 +96,13 @@ struct Compute
    * If given, bounds are not used to infer tiling map.
    */
   std::optional<isl::pw_multi_aff> tiling_spec;
+  std::optional<double> parallelism;
 
   NodeID id;
 
   Compute(const NodeID& id,
           const problem::EinsumId& einsum,
+          const std::optional<double> paralellism = std::nullopt,
           const std::optional<isl::pw_multi_aff>&& tiling_spec = std::nullopt);
 };
 
