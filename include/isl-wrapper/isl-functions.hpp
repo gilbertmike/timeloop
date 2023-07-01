@@ -7,6 +7,9 @@ namespace isl {
 
 size_t dim(const map& map, isl_dim_type dim_type);
 
+map dim_projector(space space, isl_dim_type dim_type, size_t start, size_t n);
+isl_map* dim_projector(__isl_take isl_space* space, size_t start, size_t n);
+
 map project_dim(map map, isl_dim_type dim_type, size_t start, size_t n);
 
 map project_dim_in_after(map map, size_t start);

@@ -20,18 +20,21 @@ struct LatencyBase
 
 struct ComputeLatency : public LatencyBase
 {
+  size_t start_idx;
+
   void CalculateLatency(LatencyAggregator&) override;
 };
 
 struct RootLatency : public LatencyBase
 {
-  LatencyId child;
+  virtual void CalculateLatency(LatencyAggregator& agg) override;
+  LatencyId child_id;
 };
 
 struct BranchLatencyBase : public LatencyBase
 {
   size_t start_idx;
-  std::vector<LatencyId> children;
+  std::vector<LatencyId> children_id;
 };
 
 struct PipelineLatency : public BranchLatencyBase
@@ -58,6 +61,8 @@ using AggregatorTypes = std::variant<ComputeLatency,
 
 struct LatencyAggregator
 {
+  LatencyAggregator();
+
   AggregatorTypes& AggregatorAt(LatencyId id);
 
   void CalculateLatency();
@@ -77,11 +82,11 @@ struct LatencyAggregator
         using ParentT = std::decay_t<decltype(agg)>;
         if constexpr (HasOneChildV<ParentT>)
         {
-          agg.child = child_id;
+          agg.child_id = child_id;
         }
         else if constexpr (HasManyChildrenV<ParentT>)
         {
-          agg.children.push_back(child_id);
+          agg.children_id.push_back(child_id);
         }
         else
         {

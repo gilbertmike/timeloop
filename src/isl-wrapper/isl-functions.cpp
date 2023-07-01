@@ -6,18 +6,36 @@
 
 namespace isl {
 
-size_t dim(const isl::map& map, isl_dim_type dim_type)
+size_t dim(const map& map, isl_dim_type dim_type)
 {
   return isl_map_dim(map.get(), dim_type);
 }
 
-isl::map
-project_dim(isl::map map, isl_dim_type dim_type, size_t start, size_t n)
+map dim_projector(space space, size_t start, size_t n)
+{
+  return isl::manage(dim_projector(
+    space.release(),
+    start,
+    n
+  ));
+}
+
+isl_map* dim_projector(isl_space* space, size_t start, size_t n)
+{
+  return isl_map_project_out(
+    isl_map_identity(isl_space_map_from_set(space)),
+    isl_dim_in,
+    start,
+    n
+  );
+}
+
+map project_dim(map map, isl_dim_type dim_type, size_t start, size_t n)
 {
   return isl::manage(isl_map_project_out(map.release(), dim_type, start, n));
 }
 
-isl::map project_dim_in_after(isl::map map, size_t start)
+map project_dim_in_after(map map, size_t start)
 {
   auto n_dim_in = isl_map_dim(map.get(), isl_dim_in);
   return project_dim(map, isl_dim_in, start, n_dim_in - start);

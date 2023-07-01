@@ -1,5 +1,9 @@
 #include "loop-analysis/mapping-to-isl/fused-mapping-to-isl.hpp"
 
+#include <barvinok/isl.h>
+
+#include "isl-wrapper/isl-functions.hpp"
+
 namespace analysis
 {
 
@@ -7,11 +11,36 @@ void ComputeLatency::CalculateLatency(LatencyAggregator&)
 {
 }
 
-void SequentialLatency::CalculateLatency(LatencyAggregator& agg)
+void RootLatency::CalculateLatency(LatencyAggregator& agg)
 {
-  auto n_dims = std::optional<size_t>{};
-  isl_pw_qpolynomial* p_latency = nullptr;
-  for (auto child_id : children)
+  latency = nullptr;
+  auto& child = agg.AggregatorAt(child_id);
+  auto p_child_latency = std::visit(
+    [&agg](auto&& child_agg) {
+      child_agg.CalculateLatency(agg);
+      return isl_pw_qpolynomial_copy(child_agg.latency);
+    },
+    child
+  );
+
+  auto n_dims = isl_pw_qpolynomial_dim(p_child_latency, isl_dim_in);
+  latency = p_child_latency;
+
+  auto p_projector = isl::dim_projector(
+    isl_pw_qpolynomial_get_domain_space(latency),
+    0,
+    n_dims
+  );
+
+  latency = isl_map_apply_pw_qpolynomial(p_projector, latency);
+  std::cout << "latency: " << isl_pw_qpolynomial_to_str(latency) << std::endl;
+}
+
+void PipelineLatency::CalculateLatency(LatencyAggregator& agg)
+{
+  auto n_dims = std::optional<int>{};
+  latency = nullptr;
+  for (auto child_id : children_id)
   {
     auto& child = agg.AggregatorAt(child_id);
     auto p_child_latency = std::visit(
@@ -31,15 +60,68 @@ void SequentialLatency::CalculateLatency(LatencyAggregator& agg)
     {
       n_dims = child_n_dims;
     }
-    if (p_latency)
+    if (latency)
     {
-      p_latency = isl_pw_qpolynomial_
+      latency = isl_pw_qpolynomial_add(latency, p_child_latency);
     }
     else
     {
-      p_latency = p_child_latency;
+      latency = p_child_latency;
     }
   }
+
+  auto p_projector = isl::dim_projector(
+    isl_pw_qpolynomial_get_domain_space(latency),
+    start_idx,
+    *n_dims - start_idx
+  );
+
+  latency = isl_map_apply_pw_qpolynomial(p_projector, latency);
+  std::cout << "latency: " << isl_pw_qpolynomial_to_str(latency) << std::endl;
+}
+
+void SequentialLatency::CalculateLatency(LatencyAggregator& agg)
+{
+  auto n_dims = std::optional<int>{};
+  latency = nullptr;
+  for (auto child_id : children_id)
+  {
+    auto& child = agg.AggregatorAt(child_id);
+    auto p_child_latency = std::visit(
+      [&agg](auto&& child_agg) {
+        child_agg.CalculateLatency(agg);
+        return isl_pw_qpolynomial_copy(child_agg.latency);
+      },
+      child
+    );
+
+    auto child_n_dims = isl_pw_qpolynomial_dim(p_child_latency, isl_dim_in);
+    if (n_dims && *n_dims != child_n_dims)
+    {
+      throw std::logic_error("mismatched latency isl_dim_in");
+    }
+    else
+    {
+      n_dims = child_n_dims;
+    }
+    if (latency)
+    {
+      latency = isl_pw_qpolynomial_add(latency, p_child_latency);
+    }
+    else
+    {
+      latency = p_child_latency;
+    }
+  }
+
+  auto p_projector = isl::dim_projector(
+    isl_pw_qpolynomial_get_domain_space(latency),
+    start_idx,
+    *n_dims - start_idx
+  );
+
+  latency = isl_map_apply_pw_qpolynomial(p_projector, latency);
+  std::cout << "latency: " << isl_pw_qpolynomial_to_str(latency) << std::endl;
 }
 
 AggregatorTypes& LatencyAggregator::AggregatorAt(LatencyId id)
@@ -72,6 +154,12 @@ void LatencyAggregator::SetLatency(mapping::NodeID compute,
   compute_latency.latency = latency;
 }
 
+LatencyAggregator::LatencyAggregator() :
+  root(0)
+{
+  aggregators.emplace_back(RootLatency());
+}
+
 LatencyAggregator
 CreateLatencyAggregatorFromMapping(mapping::FusedMapping& mapping)
 {
@@ -81,20 +169,22 @@ CreateLatencyAggregatorFromMapping(mapping::FusedMapping& mapping)
   auto agg_root = aggregator.GetRootId();
 
   auto root = mapping.GetRoot().id;
-  auto dfs_stack = std::vector<std::pair<mapping::NodeID, LatencyId>>();
-  dfs_stack.emplace_back(root, agg_root);
+  auto dfs_stack =
+    std::vector<std::tuple<mapping::NodeID, LatencyId, size_t>>();
+  dfs_stack.emplace_back(root, agg_root, 0);
 
   // auto start_idx = 0;
 
   while (dfs_stack.size() > 0)
   {
-    auto node_id = dfs_stack.back().first;
-    auto cur_agg_id = dfs_stack.back().second;
+    auto node_id = std::get<0>(dfs_stack.back());
+    auto cur_agg_id = std::get<1>(dfs_stack.back());
+    auto cur_start_idx = std::get<2>(dfs_stack.back());
     dfs_stack.pop_back();
     const auto& node = mapping.NodeAt(node_id);
 
     std::visit(
-      [&dfs_stack, &cur_agg_id, &aggregator] (auto&& node)
+      [&dfs_stack, &cur_agg_id, &aggregator, &cur_start_idx] (auto&& node)
       {
         using T = std::decay_t<decltype(node)>;
         if constexpr (std::is_same_v<T, mapping::Pipeline>)
@@ -103,7 +193,7 @@ CreateLatencyAggregatorFromMapping(mapping::FusedMapping& mapping)
             aggregator.AddChild<PipelineLatency>(cur_agg_id);
           for (const auto& child : node.children)
           {
-            dfs_stack.emplace_back(child, new_aggregator.id);
+            dfs_stack.emplace_back(child, new_aggregator.id, cur_start_idx+1);
           }
         }
         else if constexpr (std::is_same_v<T, Sequential>)
@@ -112,7 +202,7 @@ CreateLatencyAggregatorFromMapping(mapping::FusedMapping& mapping)
             aggregator.AddChild<SequentialLatency>(cur_agg_id);
           for (const auto& child : node.children)
           {
-            dfs_stack.emplace_back(child, new_aggregator.id);
+            dfs_stack.emplace_back(child, new_aggregator.id, cur_start_idx+1);
           }
         }
         else if constexpr (std::is_same_v<T, mapping::Compute>)
@@ -120,9 +210,13 @@ CreateLatencyAggregatorFromMapping(mapping::FusedMapping& mapping)
           auto new_agg = aggregator.AddChild<ComputeLatency>(cur_agg_id);
           aggregator.SetComputeLatency(node.id, new_agg.id);
         }
+        else if constexpr (mapping::IsLoopV<T>)
+        {
+          dfs_stack.emplace_back(*node.child, cur_agg_id, cur_start_idx+1);
+        }
         else if constexpr (mapping::HasOneChildV<T>)
         {
-          dfs_stack.emplace_back(*node.child, cur_agg_id);
+          dfs_stack.emplace_back(*node.child, cur_agg_id, cur_start_idx);
         }
         else
         {
