@@ -48,7 +48,7 @@ namespace analysis
 using DataSpaceID = problem::DataSpaceId;
 using FactorizedDimensionID = problem::Shape::FactorizedDimensionID;
 using EinsumID = problem::EinsumId;
-using BufferID = mapping::BufferID;
+using BufferId = mapping::BufferId;
 
 struct Temporal {};
 struct Spatial
@@ -79,13 +79,13 @@ std::ostream& operator<<(std::ostream& os, const SpaceTime& t);
 
 struct LogicalBuffer
 {
-  BufferID buffer_id;
+  BufferId buffer_id;
   DataSpaceID dspace_id;
   mapping::NodeID branch_leaf_id;
 
   LogicalBuffer() = default;
   LogicalBuffer(
-    BufferID buffer_id,
+    BufferId buffer_id,
     DataSpaceID dspace_id,
     mapping::NodeID branch_leaf_id
   );

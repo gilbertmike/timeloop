@@ -5,7 +5,7 @@
 
 #include "applications/looptree-model/model.hpp"
 #include "loop-analysis/nest-analysis.hpp"
-#include "loop-analysis/isl-nest-analysis.hpp"
+#include "loop-analysis/isl-analysis/isl-nest-analysis.hpp"
 #include "loop-analysis/mapping-to-isl/fused-mapping-to-isl.hpp"
 #include "loop-analysis/isl-ir.hpp"
 #include "isl-wrapper/ctx-manager.hpp"

@@ -126,15 +126,16 @@ isl-wrapper/ctx-manager.cpp
 isl-wrapper/isl-functions.cpp
 loop-analysis/aahr-carve.cpp
 loop-analysis/coordinate-space-tile-info.cpp
+loop-analysis/isl-analysis/capacity-analysis.cpp
+loop-analysis/isl-analysis/isl-nest-analysis.cpp
+loop-analysis/isl-analysis/isl-to-legacy-adaptor.cpp
+loop-analysis/isl-analysis/latency-analysis.cpp
 loop-analysis/logical-buffer.cpp
 loop-analysis/loop-state.cpp
 loop-analysis/mapping-to-isl/fused-mapping-to-isl.cpp
-loop-analysis/mapping-to-isl/latency-aggregator.cpp
 loop-analysis/mapping-to-isl/mapping-to-isl.cpp
 loop-analysis/isl-ir/ir.cpp
 loop-analysis/isl-ir/input-output.cpp
-loop-analysis/isl-nest-analysis.cpp
-loop-analysis/isl-to-legacy-adaptor.cpp
 loop-analysis/tiling.cpp
 loop-analysis/tiling-tile-info.cpp
 loop-analysis/point.cpp
@@ -155,6 +156,7 @@ pat/pat.cpp
 mapping/loop.cpp
 mapping/nest.cpp
 mapping/spacetime.cpp
+mapping/fused-mapping/dfs.cpp
 mapping/fused-mapping/fused-mapping.cpp
 mapping/fused-mapping/mapping-path.cpp
 mapping/fused-mapping/parser.cpp

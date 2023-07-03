@@ -50,7 +50,7 @@ NodeID CompoundConfigNodeToMapping(FusedMapping& mapping,
                                    const config::CompoundConfigNode& cfg)
 {
   std::string type;
-  BufferID target;
+  BufferId target;
   std::string dspace_name;
   std::string dim_name;
   std::string einsum_name;

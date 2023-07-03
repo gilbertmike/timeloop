@@ -1,4 +1,4 @@
-#include "loop-analysis/isl-to-legacy-adaptor.hpp"
+#include "loop-analysis/isl-analysis/isl-to-legacy-adaptor.hpp"
 
 #include <barvinok/isl.h>
 
@@ -81,7 +81,7 @@ CompoundComputeNest GenerateCompoundComputeNest(
     }
   }
   // Insert innermost level with number of iterations divided by spatial elements
-  BufferID innermost_buf_id = storage_tiling_boundaries.size();
+  BufferId innermost_buf_id = storage_tiling_boundaries.size();
 
   uint64_t max_temporal_iterations = 1;
   for (auto& state : nest_state)
@@ -129,7 +129,7 @@ CompoundDataMovementNest GenerateCompoundDataMovementNest(
 {
   CompoundDataMovementNest working_sets;
 
-  BufferID cur_buffer_id = storage_tiling_boundaries.size();
+  BufferId cur_buffer_id = storage_tiling_boundaries.size();
   bool first_loop = true;
   bool last_is_boundary = false;
   for (const auto& cur : nest_state)

@@ -1,6 +1,4 @@
-#include "loop-analysis/mapping-to-isl/fused-mapping-to-isl.hpp"
-
-#include <barvinok/isl.h>
+#include "loop-analysis/isl-analysis/latency-analysis.hpp"
 
 #include "isl-wrapper/isl-functions.hpp"
 
@@ -196,7 +194,7 @@ CreateLatencyAggregatorFromMapping(mapping::FusedMapping& mapping)
             dfs_stack.emplace_back(child, new_aggregator.id, cur_start_idx+1);
           }
         }
-        else if constexpr (std::is_same_v<T, Sequential>)
+        else if constexpr (std::is_same_v<T, mapping::Sequential>)
         {
           auto new_aggregator =
             aggregator.AddChild<SequentialLatency>(cur_agg_id);

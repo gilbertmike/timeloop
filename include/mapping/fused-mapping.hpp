@@ -6,13 +6,14 @@
 #include <isl/cpp.h>
 
 #include "compound-config/compound-config.hpp"
+#include "util/metaprogramming.hpp"
 #include "workload/workload.hpp"
 #include "workload/fused-workload.hpp"
 
 namespace mapping
 {
 using NodeID = size_t;
-using BufferID = int;
+using BufferId = int;
 
 class FusedMapping;
 class MappingPath;
@@ -75,7 +76,7 @@ struct ParFor
 
 struct Storage
 {
-  BufferID buffer;
+  BufferId buffer;
   problem::DataSpaceId dspace;
   std::vector<std::pair<NodeID, isl::map>> logical_buf_occupancy;
 
@@ -83,7 +84,7 @@ struct Storage
   std::optional<NodeID> child;
 
   Storage(const NodeID& id,
-          const BufferID& buffer,
+          const BufferId& buffer,
           const problem::DataSpaceId& dspace);
 };
 
@@ -320,6 +321,79 @@ class MappingPath
 };
 
 MappingPaths GetPaths(FusedMapping& mapping);
+
+struct DfsRange;
+
+DfsRange IterateInDfsOrder(mapping::FusedMapping&);
+
+struct DfsIterator
+{
+  bool operator==(const DfsIterator& other);
+  bool operator!=(const DfsIterator& other);
+
+  DfsIterator& operator++();
+
+  /**
+   * @brief Id of current node, the id of its parent, and the number of loops
+   *    above this node.
+   */
+  std::tuple<NodeID, NodeID, size_t> operator*();
+
+ private:
+  FusedMapping& mapping_;
+  std::function<bool(const MappingNodeTypes&)> filter_;
+  std::vector<NodeID> stack_;
+  std::map<NodeID, NodeID> child_to_parent_;
+  std::map<NodeID, size_t> node_to_n_loops_;
+
+  DfsIterator(FusedMapping& mapping,
+              const std::vector<NodeID>& stack,
+              std::function<bool(const MappingNodeTypes&)> filter);
+
+  friend DfsRange;
+};
+
+struct DfsRange
+{
+  DfsIterator begin();
+  DfsIterator end();
+
+ private:
+  FusedMapping& mapping_;
+  std::function<bool(const MappingNodeTypes&)> filter_;
+
+  DfsRange(FusedMapping& mapping,
+           std::function<bool(const MappingNodeTypes&)> filter);
+
+  friend DfsRange
+  IterateInDfsOrder(FusedMapping&,
+                    std::function<bool(const MappingNodeTypes&)>);
+};
+
+DfsRange
+IterateInDfsOrder(FusedMapping& mapping,
+                  std::function<bool(const MappingNodeTypes&)> filter);
+
+template<typename... IncludedNodesT>
+DfsRange IterateInDfsOrder(FusedMapping& mapping)
+{
+  auto filter =
+    [](const MappingNodeTypes& node) -> bool
+    {
+      return std::visit(
+        [](auto&& node)
+        {
+          using T = std::decay_t<decltype(node)>;
+          return IsAnyOfV<T, IncludedNodesT...>;
+        },
+        node
+      );
+    };
+  
+  return IterateInDfsOrder(mapping, filter);
+}
+
+template<> DfsRange IterateInDfsOrder<>(FusedMapping& mapping);
 
 FusedMapping ParseMapping(const config::CompoundConfigNode& cfg,
                           const problem::FusedWorkload& workload);

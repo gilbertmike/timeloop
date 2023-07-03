@@ -609,7 +609,7 @@ LogicalBufSkewsFromMapping(mapping::FusedMapping& mapping)
     ));
     auto cur_has_spatial = false;
     auto new_cur_has_spatial = false;
-    auto last_buf = std::optional<BufferID>();
+    auto last_buf = std::optional<BufferId>();
     for (const auto& node : path)
     {
       std::visit(

@@ -52,7 +52,7 @@ ParFor ParFor::WithTileSize(const NodeID& id,
 }
 
 Storage::Storage(const NodeID& id,
-  const BufferID& buffer,
+  const BufferId& buffer,
   const problem::DataSpaceId& dspace
 ) :
   buffer(buffer), dspace(dspace), id(id) {}
