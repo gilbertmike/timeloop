@@ -73,8 +73,21 @@ isl_val* get_val_from_singular_qpolynomial(isl_pw_qpolynomial* pw_qp);
 
 isl_val* get_val_from_singular_qpolynomial_fold(isl_pw_qpolynomial_fold* pwf);
 
+
 map ConstraintDimEquals(map map, size_t n_dims);
 
 map MapToPriorData(size_t n_in_dims, size_t top);
+
+
+__isl_give isl_map*
+lex_lt(__isl_keep isl_space* set_space, size_t start, size_t n_lex);
+
+map map_to_next(const space& space, size_t start, size_t n_lex, size_t n_total);
+
+
+__isl_give isl_map*
+map_to_next(__isl_take isl_set* set, size_t start, size_t n);
+
+map map_to_next(set set, size_t start, size_t n);
 
 };  // namespace isl

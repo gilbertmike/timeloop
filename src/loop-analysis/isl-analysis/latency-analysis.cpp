@@ -68,6 +68,22 @@ void PipelineLatency::CalculateLatency(LatencyAggregator& agg)
     }
   }
 
+  auto p_domain = isl_pw_qpolynomial_domain(isl_pw_qpolynomial_copy(latency));
+
+  auto p_identity = isl_map_identity(
+    isl_space_map_from_set(isl_set_get_space(p_domain))
+  );
+  p_identity = isl_map_intersect_domain(p_identity, isl_set_copy(p_domain));
+
+  // Latency should be in the form [..., (PipelineSequential)*, PipelineSpatial]
+  auto p_next_sequential = isl::map_to_next(
+    isl_set_copy(p_domain),
+    start_idx,
+    *n_dims-start_idx
+  );
+
+  std::cout << isl_map_to_str(p_next_sequential) << std::endl;
+
   auto p_projector = isl::dim_projector(
     isl_pw_qpolynomial_get_domain_space(latency),
     start_idx,
@@ -189,6 +205,7 @@ CreateLatencyAggregatorFromMapping(mapping::FusedMapping& mapping)
         {
           auto new_aggregator =
             aggregator.AddChild<PipelineLatency>(cur_agg_id);
+          new_aggregator.start_idx = cur_start_idx;
           for (const auto& child : node.children)
           {
             dfs_stack.emplace_back(child, new_aggregator.id, cur_start_idx+1);
@@ -198,6 +215,7 @@ CreateLatencyAggregatorFromMapping(mapping::FusedMapping& mapping)
         {
           auto new_aggregator =
             aggregator.AddChild<SequentialLatency>(cur_agg_id);
+          new_aggregator.start_idx = cur_start_idx;
           for (const auto& child : node.children)
           {
             dfs_stack.emplace_back(child, new_aggregator.id, cur_start_idx+1);

@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "barvinok/isl.h"
 #include "isl/constraint.h"
 
@@ -337,6 +339,41 @@ isl::map MapToPriorData(size_t n_in_dims, size_t top)
   isl_local_space_free(p_ls);
 
   return isl::manage(p_map);
+}
+
+__isl_give isl_map*
+lex_lt(__isl_keep isl_space* set_space, size_t start, size_t n_lex)
+{
+  auto n_total = isl_space_dim(set_space, isl_dim_set);
+
+  auto p_space = isl_space_set_alloc(GetIslCtx().get(), 0, n_lex);
+  auto p_map = isl_map_lex_lt(p_space);
+
+  p_map = insert_equal_dims(p_map, n_lex, n_lex, n_total-start-n_lex);
+  p_map = insert_equal_dims(p_map, 0, 0, start);
+
+  return p_map;
+}
+
+map lex_lt(const space& space, size_t start, size_t n_lex)
+{
+  return isl::manage(lex_lt(space.get(), start, n_lex));
+}
+
+__isl_give isl_map*
+map_to_next(__isl_take isl_set* set, size_t start, size_t n)
+{
+  auto p_lex_lt = lex_lt(isl_set_get_space(set), start, n);
+  p_lex_lt = isl_map_intersect_range(p_lex_lt, isl_set_copy(set));
+  p_lex_lt = isl_map_intersect_domain(p_lex_lt, set);
+  std::cout << isl_map_to_str(p_lex_lt) << std::endl;
+  p_lex_lt = isl_map_lexmin(p_lex_lt);
+  return p_lex_lt;
+}
+
+map map_to_next(set set, size_t start, size_t n)
+{
+  return isl::manage(map_to_next(set.release(), start, n));
 }
 
 };  // namespace isl
