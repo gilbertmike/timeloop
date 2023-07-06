@@ -69,9 +69,8 @@ isl_pw_qpolynomial* sum_map_range_card(map map);
 
 double val_to_double(isl_val* val);
 
-isl_val* get_val_from_singular_qpolynomial(isl_pw_qpolynomial* pw_qp);
-
-isl_val* get_val_from_singular_qpolynomial_fold(isl_pw_qpolynomial_fold* pwf);
+isl_val* get_val_from_singular(isl_pw_qpolynomial* pw_qp);
+isl_val* get_val_from_singular(isl_pw_qpolynomial_fold* pwf);
 
 
 map ConstraintDimEquals(map map, size_t n_dims);
@@ -90,4 +89,11 @@ map_to_next(__isl_take isl_set* set, size_t start, size_t n);
 
 map map_to_next(set set, size_t start, size_t n);
 
+__isl_give isl_set*
+separate_dependent_bounds(__isl_take isl_set* set, size_t start, size_t n);
+
+std::string pw_qpolynomial_fold_to_str(isl_pw_qpolynomial_fold* pwqf);
+
+__isl_give isl_pw_qpolynomial*
+gather_pw_qpolynomial_from_fold(__isl_take isl_pw_qpolynomial_fold* pwqpf);
 };  // namespace isl

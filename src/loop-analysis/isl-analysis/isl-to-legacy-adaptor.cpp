@@ -98,7 +98,7 @@ CompoundComputeNest GenerateCompoundComputeNest(
       auto compute_info = ComputeInfo();
       compute_info.replication_factor = num_compute_units;
       compute_info.accesses = isl::val_to_double(
-        isl::get_val_from_singular_qpolynomial(
+        isl::get_val_from_singular(
           isl::set_card(occupancy.map.domain())
         )
       ) / num_compute_units;
@@ -193,7 +193,7 @@ CompoundDataMovementNest GenerateCompoundDataMovementNest(
           };
         }
 
-        auto p_val = isl::get_val_from_singular_qpolynomial(
+        auto p_val = isl::get_val_from_singular(
           isl::sum_map_range_card(link_transfers.map)
         );
         p_val = isl_val_div(
@@ -211,7 +211,7 @@ CompoundDataMovementNest GenerateCompoundDataMovementNest(
       else if (is_master_spatial)
       {
         auto p_occ_map = occ.map.copy();
-        auto p_occ_count = isl::get_val_from_singular_qpolynomial_fold(
+        auto p_occ_count = isl::get_val_from_singular(
           isl_pw_qpolynomial_bound(
             isl_map_card(
               isl_map_project_out(
@@ -230,7 +230,7 @@ CompoundDataMovementNest GenerateCompoundDataMovementNest(
       else if (is_boundary)
       {
         auto p_occ_map = occ.map.copy();
-        auto p_occ_count = isl::get_val_from_singular_qpolynomial_fold(
+        auto p_occ_count = isl::get_val_from_singular(
           isl_pw_qpolynomial_bound(isl_map_card(p_occ_map),
                                    isl_fold_max,
                                    nullptr)

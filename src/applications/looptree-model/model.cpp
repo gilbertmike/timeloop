@@ -9,6 +9,7 @@
 #include "loop-analysis/mapping-to-isl/fused-mapping-to-isl.hpp"
 #include "loop-analysis/isl-ir.hpp"
 #include "isl-wrapper/ctx-manager.hpp"
+#include "isl-wrapper/isl-functions.hpp"
 #include "mapping/fused-mapping.hpp"
 #include "workload/fused-workload.hpp"
 #include <isl/constraint.h>
@@ -19,44 +20,6 @@
 //--------------------------------------------//
 //                Application                 //
 //--------------------------------------------//
-
-char* isl_pw_qpolynomial_fold_to_str(isl_pw_qpolynomial_fold* pwqf)
-{
-  auto p_printer = isl_printer_to_str(GetIslCtx().get());
-  p_printer = isl_printer_print_pw_qpolynomial_fold(p_printer, pwqf);
-  auto p_str = isl_printer_get_str(p_printer);
-  isl_printer_free(p_printer);
-  return p_str;
-}
-
-char* isl_pw_qpolynomial_fold_to_str(isl_pw_qpolynomial_fold* pwqf, void*)
-{
-  auto p_printer = isl_printer_to_str(GetIslCtx().get());
-  p_printer = isl_printer_print_pw_qpolynomial_fold(p_printer, pwqf);
-  auto p_str = isl_printer_get_str(p_printer);
-  isl_printer_free(p_printer);
-  return p_str;
-}
-
-isl_stat foo2(isl_qpolynomial* qp, void* qp_out)
-{
-  *((isl_pw_qpolynomial**) qp_out) = isl_pw_qpolynomial_from_qpolynomial(qp);
-  std::cout << isl_pw_qpolynomial_to_str(isl_pw_qpolynomial_from_qpolynomial(
-    qp
-  )) << std::endl;
-  return isl_stat_ok;
-}
-
-isl_bool foo(isl_set* set, isl_qpolynomial_fold* fold, void* qp_out)
-{
-  std::cout << isl_set_to_str(set) << std::endl;
-  isl_qpolynomial_fold_foreach_qpolynomial(
-    fold,
-    foo2,
-    qp_out
-  );
-  return isl_bool_true;
-}
 
 template <class Archive>
 void Application::serialize(Archive& ar, const unsigned int version)
@@ -206,28 +169,11 @@ Application::Application(config::CompoundConfig* config,
     assert(tight == isl_bool_true);
 
     std::cout << "[Occupancy]" << buf << ": "
-      << isl_pw_qpolynomial_fold_to_str(p_occ_count) << std::endl;
+      << isl::pw_qpolynomial_fold_to_str(p_occ_count) << std::endl;
     std::cout << "[Fill]" << buf << ": "
       << isl_pw_qpolynomial_to_str(p_fill_count) << std::endl;
     isl_pw_qpolynomial_free(p_fill_count);
   }
-
-  auto p_fold = isl_pw_qpolynomial_fold_read_from_str(
-    GetIslCtx().get(),
-    "{ [x, y] -> max(25 + 5*x + y) }"
-  );
-  auto p_map = isl_map_read_from_str(
-    GetIslCtx().get(),
-    "{ [x] -> [x, y] : 0 <= y < 5 }"
-  );
-  isl_pw_qpolynomial* p_qp;
-  isl_pw_qpolynomial_fold_every_piece(
-    p_fold,
-    foo,
-    &p_qp
-  );
-  p_qp = isl_map_apply_pw_qpolynomial(p_map, p_qp);
-  std::cout << isl_pw_qpolynomial_to_str(p_qp) << std::endl;
 
   for (const auto& [compute, tiling] : mapping_analysis_result.branch_tiling)
   {
@@ -252,7 +198,10 @@ Application::Application(config::CompoundConfig* config,
     isl_pw_qpolynomial_free(p_ops);
   }
 
-  mapping_analysis_result.compute_latency_aggregator.CalculateLatency();
+  auto& latency_aggregator =
+    mapping_analysis_result.compute_latency_aggregator;
+  auto latency = latency_aggregator.CalculateLatency();
+  std::cout << "[Latency]: " << latency << std::endl;
 
   // // for (const auto& [buf, fill] : fills)
   // // {

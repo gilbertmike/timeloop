@@ -65,7 +65,7 @@ struct LatencyAggregator
 
   AggregatorTypes& AggregatorAt(LatencyId id);
 
-  void CalculateLatency();
+  double CalculateLatency();
 
   LatencyId GetRootId() const;
 
@@ -104,7 +104,7 @@ struct LatencyAggregator
                   __isl_take isl_pw_qpolynomial* latency);
 
  private:
-  LatencyId root;
+  LatencyId root_id;
   std::vector<AggregatorTypes> aggregators;
   std::map<mapping::NodeID, LatencyId> compute_to_aggregator;
 };

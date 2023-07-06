@@ -257,7 +257,7 @@ double val_to_double(isl_val* val)
   return (double)num / (double)den;
 }
 
-isl_val* get_val_from_singular_qpolynomial(isl_pw_qpolynomial* pw_qp)
+isl_val* get_val_from_singular(isl_pw_qpolynomial* pw_qp)
 {
   return isl_pw_qpolynomial_eval(
     pw_qp,
@@ -265,7 +265,7 @@ isl_val* get_val_from_singular_qpolynomial(isl_pw_qpolynomial* pw_qp)
   );
 }
 
-isl_val* get_val_from_singular_qpolynomial_fold(isl_pw_qpolynomial_fold* pwf)
+isl_val* get_val_from_singular(isl_pw_qpolynomial_fold* pwf)
 {
   return isl_pw_qpolynomial_fold_eval(
     pwf,
@@ -366,14 +366,83 @@ map_to_next(__isl_take isl_set* set, size_t start, size_t n)
   auto p_lex_lt = lex_lt(isl_set_get_space(set), start, n);
   p_lex_lt = isl_map_intersect_range(p_lex_lt, isl_set_copy(set));
   p_lex_lt = isl_map_intersect_domain(p_lex_lt, set);
-  std::cout << isl_map_to_str(p_lex_lt) << std::endl;
   p_lex_lt = isl_map_lexmin(p_lex_lt);
+  p_lex_lt = isl_map_coalesce(p_lex_lt);
   return p_lex_lt;
 }
 
 map map_to_next(set set, size_t start, size_t n)
 {
   return isl::manage(map_to_next(set.release(), start, n));
+}
+
+__isl_give isl_set*
+separate_dependent_bounds(__isl_take isl_set* set, size_t start, size_t n)
+{
+  auto fst_set = isl_set_project_out(isl_set_copy(set), isl_dim_set, 0, start);
+  fst_set = isl_set_insert_dims(fst_set, isl_dim_set, 0, start);
+  auto snd_set = isl_set_project_out(set, isl_dim_set, start, n);
+  snd_set = isl_set_insert_dims(snd_set, isl_dim_set, start, n);
+  return isl_set_coalesce(isl_set_intersect(fst_set, snd_set));
+}
+
+std::string pw_qpolynomial_fold_to_str(isl_pw_qpolynomial_fold* pwqf)
+{
+  auto p_printer = isl_printer_to_str(GetIslCtx().get());
+  p_printer = isl_printer_print_pw_qpolynomial_fold(p_printer, pwqf);
+  auto p_str = isl_printer_get_str(p_printer);
+  isl_printer_free(p_printer);
+  return std::string(p_str);
+}
+
+struct qpolynomial_from_fold_info
+{
+  isl_pw_qpolynomial** pp_pwqp;
+  isl_set* domain;
+};
+
+isl_stat fold_accumulator(isl_qpolynomial* qp, void* pwqp_out)
+{
+  auto p_info = static_cast<qpolynomial_from_fold_info*>(pwqp_out);
+  auto p_pwqp = isl_pw_qpolynomial_from_qpolynomial(qp);
+  p_pwqp = isl_pw_qpolynomial_intersect_domain(p_pwqp,
+                                               isl_set_copy(p_info->domain));
+  if (*p_info->pp_pwqp)
+  {
+    *p_info->pp_pwqp = isl_pw_qpolynomial_add(p_pwqp, *p_info->pp_pwqp);
+  }
+  else
+  {
+    *p_info->pp_pwqp = p_pwqp;
+  }
+  return isl_stat_ok;
+}
+
+isl_bool
+pw_fold_accumulator(isl_set* set, isl_qpolynomial_fold* fold, void* pwqp_out)
+{
+  qpolynomial_from_fold_info info {
+    .pp_pwqp = static_cast<isl_pw_qpolynomial**>(pwqp_out),
+    .domain = set
+  };
+  isl_qpolynomial_fold_foreach_qpolynomial(
+    fold,
+    fold_accumulator,
+    &info
+  );
+  return isl_bool_true;
+}
+
+__isl_give isl_pw_qpolynomial*
+gather_pw_qpolynomial_from_fold(__isl_take isl_pw_qpolynomial_fold* pwqpf)
+{
+  isl_pw_qpolynomial* p_pwqp = nullptr;
+  isl_pw_qpolynomial_fold_every_piece(
+    pwqpf,
+    pw_fold_accumulator,
+    &p_pwqp
+  );
+  return p_pwqp;
 }
 
 };  // namespace isl
