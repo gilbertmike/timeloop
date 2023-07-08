@@ -51,11 +51,14 @@ ParFor ParFor::WithTileSize(const NodeID& id,
   return node;
 }
 
-Storage::Storage(const NodeID& id,
+Storage::Storage(
+  const NodeID& id,
   const BufferId& buffer,
-  const problem::DataSpaceId& dspace
-) :
-  buffer(buffer), dspace(dspace), id(id) {}
+  const problem::DataSpaceId& dspace,
+  bool exploits_reuse
+) : buffer(buffer), dspace(dspace), exploits_reuse(exploits_reuse), id(id)
+{
+}
 
 Compute::Compute(
   const NodeID& id,

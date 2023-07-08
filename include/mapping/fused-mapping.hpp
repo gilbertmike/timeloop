@@ -79,13 +79,15 @@ struct Storage
   BufferId buffer;
   problem::DataSpaceId dspace;
   std::vector<std::pair<NodeID, isl::map>> logical_buf_occupancy;
+  bool exploits_reuse;
 
   NodeID id;
   std::optional<NodeID> child;
 
   Storage(const NodeID& id,
           const BufferId& buffer,
-          const problem::DataSpaceId& dspace);
+          const problem::DataSpaceId& dspace,
+          bool exploits_reuse=true);
 };
 
 struct Compute

@@ -24,6 +24,9 @@ GetParallelism(mapping::FusedMapping& mapping);
 BranchTilings TilingFromMapping(mapping::FusedMapping& mapping,
                                 const problem::FusedWorkload& workload);
 
+std::map<LogicalBuffer, bool>
+BufRightAboveSequential(mapping::FusedMapping& mapping);
+
 std::map<LogicalBuffer, Skew>
 LogicalBufSkewsFromMapping(mapping::FusedMapping& mapping);
 
@@ -53,6 +56,8 @@ OccupanciesFromMapping(mapping::FusedMapping& mapping,
         << std::endl;
     }
   }
+
+  result.buf_right_above_sequential = BufRightAboveSequential(mapping);
 
   std::map<LogicalBuffer, Occupancy> occupancies;
   auto buf_skew = LogicalBufSkewsFromMapping(mapping);
@@ -590,6 +595,57 @@ BranchTilings TilingFromMapping(mapping::FusedMapping& mapping,
   }
 
   return result;
+}
+
+std::map<LogicalBuffer, bool>
+BufRightAboveSequential(mapping::FusedMapping& mapping)
+{
+  std::map<LogicalBuffer, bool> buf_right_above_sequential;
+  for (auto path : GetPaths(mapping))
+  {
+    const auto& leaf = path.back();
+    auto last_bufs = std::vector<LogicalBuffer>();
+    for (const auto& node : path)
+    {
+      std::visit(
+        [&last_bufs, &leaf, &buf_right_above_sequential] (auto&& node) {
+          using NodeT = std::decay_t<decltype(node)>;
+
+          if constexpr (std::is_same_v<NodeT, mapping::Storage>)
+          {
+            last_bufs.emplace_back(
+              LogicalBuffer(node.buffer, node.dspace, GetNodeId(leaf))
+            );
+          }
+          else if constexpr (std::is_same_v<NodeT, mapping::Sequential>)
+          {
+            for (const auto& buf : last_bufs)
+            {
+              buf_right_above_sequential.emplace(std::make_pair(
+                buf,
+                true
+              ));
+            }
+            last_bufs.clear();
+          }
+          else 
+          {
+            for (const auto& buf : last_bufs)
+            {
+              buf_right_above_sequential.emplace(std::make_pair(
+                buf,
+                false
+              ));
+            }
+            last_bufs.clear();
+          }
+        },
+        node
+      );
+    }
+  }
+
+  return buf_right_above_sequential;
 }
 
 std::map<LogicalBuffer, Skew>

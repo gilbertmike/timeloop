@@ -15,6 +15,13 @@ namespace analysis
 struct MappingAnalysisResult
 {
   /**
+   * @brief Whether a logical buffer is right above a sequential node.
+   * 
+   * This is used when calculating capacity since some data can be dropped
+   * earlier than usual when using sequential mapping without tiling.
+   */
+  std::map<LogicalBuffer, bool> buf_right_above_sequential;
+  /**
    * @brief The occupancy of every logical buffer as defined in the mapping.
    */
   std::map<LogicalBuffer, Occupancy> lbuf_to_occupancy;
