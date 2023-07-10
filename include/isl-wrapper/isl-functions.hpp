@@ -1,7 +1,9 @@
 #pragma once
 
+#include <boost/range/adaptor/indexed.hpp>
+#include <boost/range/adaptor/reversed.hpp>
 #include <isl/cpp.h>
-#include "isl/polynomial.h"
+#include <isl/polynomial.h>
 
 namespace isl {
 
@@ -9,6 +11,24 @@ size_t dim(const map& map, isl_dim_type dim_type);
 
 map dim_projector(space space, isl_dim_type dim_type, size_t start, size_t n);
 isl_map* dim_projector(__isl_take isl_space* space, size_t start, size_t n);
+/**
+ * @brief Projects out isl_dim_in if element in mask is true
+ */
+template<typename RangeT>
+isl_map* dim_projector(__isl_take isl_space* space, RangeT mask)
+{
+  using namespace boost::adaptors;
+
+  auto p_projector = isl_map_identity(isl_space_map_from_set(space));
+  for (const auto& [idx, is_projected_out] : mask | indexed(0) | reversed )
+  {
+    if (is_projected_out)
+    {
+      p_projector = isl_map_project_out(p_projector, isl_dim_in, idx, 1);
+    }
+  }
+  return p_projector;
+}
 
 map project_dim(map map, isl_dim_type dim_type, size_t start, size_t n);
 

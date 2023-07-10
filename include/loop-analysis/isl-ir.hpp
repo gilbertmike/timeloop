@@ -77,6 +77,8 @@ std::ostream& operator<<(std::ostream& os, const PipelineTemporal& t);
 std::ostream& operator<<(std::ostream& os, const PipelineSpatial& t);
 std::ostream& operator<<(std::ostream& os, const SpaceTime& t);
 
+bool IsTemporal(const SpaceTime& st);
+
 struct LogicalBuffer
 {
   BufferId buffer_id;
@@ -165,6 +167,8 @@ struct Occupancy
   Occupancy();
   Occupancy(const std::vector<SpaceTime>& dim_in_tags, isl::map map);
 };
+
+std::ostream& operator<<(std::ostream& os, const Occupancy& s);
 
 /**
  * @brief TARDIS-style X-relation.

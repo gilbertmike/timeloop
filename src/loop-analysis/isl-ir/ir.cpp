@@ -4,6 +4,11 @@
 
 namespace analysis {
 
+bool IsTemporal(const SpaceTime& st)
+{
+  return std::holds_alternative<Temporal>(st);
+}
+
 LogicalBuffer::LogicalBuffer(BufferId buffer_id,
                              DataSpaceID dspace_id,
                              mapping::NodeID branch_leaf_id) :

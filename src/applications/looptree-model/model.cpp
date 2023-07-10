@@ -5,6 +5,7 @@
 
 #include "applications/looptree-model/model.hpp"
 #include "loop-analysis/nest-analysis.hpp"
+#include "loop-analysis/isl-analysis/capacity-analysis.hpp"
 #include "loop-analysis/isl-analysis/isl-nest-analysis.hpp"
 #include "loop-analysis/mapping-to-isl/fused-mapping-to-isl.hpp"
 #include "loop-analysis/isl-ir.hpp"
@@ -202,6 +203,11 @@ Application::Application(config::CompoundConfig* config,
     mapping_analysis_result.compute_latency_aggregator;
   auto latency = latency_aggregator.CalculateLatency();
   std::cout << "[Latency]: " << latency << std::endl;
+
+  auto capacities = ComputeCapacityFromMapping(
+    mapping,
+    mapping_analysis_result.lbuf_to_occupancy
+  );
 
   // // for (const auto& [buf, fill] : fills)
   // // {

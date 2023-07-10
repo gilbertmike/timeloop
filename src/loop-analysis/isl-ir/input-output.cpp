@@ -59,6 +59,29 @@ std::ostream& operator<<(std::ostream& os, const LogicalBuffer& buf)
   return os;
 }
 
+std::ostream& operator<<(std::ostream& os, const Occupancy& s)
+{
+  auto begin = s.dim_in_tags.begin();
+  auto end = s.dim_in_tags.end();
+
+  os << "[";
+
+  if (begin == end)
+  {
+    os << "] " << s.map;
+    return os;
+  }
+
+  os << *begin;
+
+  for (auto it = begin + 1; it != end; ++it)
+  {
+    os << ", " << *it;
+  }
+
+  os << "] " << s.map;
+  return os;
+}
 
 std::ostream& operator<<(std::ostream& os, const Skew& s)
 {
