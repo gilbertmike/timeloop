@@ -113,8 +113,7 @@ CreateCapacityAggregatorFromMapping(mapping::FusedMapping& mapping);
 std::map<mapping::BufferId, isl_pw_qpolynomial*>
 ComputeCapacityFromMapping(
   mapping::FusedMapping& mapping,
-  const std::map<LogicalBuffer, Occupancy>& occupancies,
-  const std::map<mapping::NodeID, std::vector<LogicalBuffer>>& node_to_lbuf
+  const std::map<LogicalBuffer, Occupancy>& occupancies
 );
 
 };
