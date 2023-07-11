@@ -181,25 +181,14 @@ Application::Application(config::CompoundConfig* config,
     auto p_ops = isl_map_card(tiling.copy());
     std::cout << "[Operations]" << compute << ": "
       << isl_pw_qpolynomial_to_str(p_ops) << std::endl;
-
-    auto assumed_parallelism =
-      mapping_analysis_result.compute_to_assumed_parallelism.at(compute);
-    auto p_parallelism = isl_val_int_from_si(
-      GetIslCtx().get(),
-      static_cast<int>(assumed_parallelism)
-    );
-    auto p_latency = isl_pw_qpolynomial_scale_down_val(
-      isl_pw_qpolynomial_copy(p_ops),
-      p_parallelism
-    );
-    mapping_analysis_result.compute_latency_aggregator.SetLatency(
-      compute,
-      p_latency
-    );
     isl_pw_qpolynomial_free(p_ops);
   }
 
-  auto latency = CalculateLatency(mapping_analysis_result.lcomp_to_occupancy);
+  auto latency =
+    mapping_analysis_result.compute_latency_aggregator.CalculateLatency(
+      mapping_analysis_result.lcomp_to_occupancy,
+      mapping_analysis_result.compute_to_assumed_parallelism
+    );
   std::cout << "[Latency]: " << latency << std::endl;
 
   auto capacities = ComputeCapacityFromMapping(
