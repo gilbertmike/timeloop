@@ -69,7 +69,7 @@ ReduceCapacity(__isl_take isl_pw_qpolynomial* p_cap,
   auto i = mask.size()-1;
   for (const auto& tag : dim_in_tags_reversed)
   {
-    if (IsTemporal(tag) || std::holds_alternative<Sequential>
+    if (IsTemporal(tag) || std::holds_alternative<Sequential>(tag)
         || std::holds_alternative<PipelineTemporal>(tag))
     {
       mask[i] = true;
@@ -86,6 +86,10 @@ ReduceCapacity(__isl_take isl_pw_qpolynomial* p_cap,
   return isl::gather_pw_qpolynomial_from_fold(p_cap_fold);
 }
 
+/**
+ * @brief Compute capacity usage for each buffer id.
+ * 
+ */
 std::map<mapping::BufferId, isl_pw_qpolynomial*>
 ComputeCapacityFromMapping(
   mapping::FusedMapping& mapping,
@@ -136,10 +140,6 @@ IntermediateResult ComputeCapacityFromMapping(
               if (lb.buffer_id == b.buffer_id && lb.dspace_id == b.dspace_id)
               {
                 dim_in_tags = occ.dim_in_tags;
-                auto p_lb_cap = ReduceCapacityToLastBranch(
-                  isl_map_card(occ.map.copy()),
-                  occ.dim_in_tags
-                );
                 auto p_occ = occ.map.copy();
                 if (!p_total_occ)
                 {
@@ -204,9 +204,6 @@ IntermediateResult ComputeCapacityFromMapping(
             {
               if (!b.exploits_reuse && b.right_above_branch)
               {
-                auto start = dspace_start.at(b.dspace_id);
-                auto end = dspace_end.at(b.dspace_id);
-
                 isl_map* p_total_occ = nullptr;
                 std::vector<SpaceTime> dim_in_tags;
                 for (const auto& [lb, occ] : occupancies)
@@ -214,10 +211,6 @@ IntermediateResult ComputeCapacityFromMapping(
                   if (lb.buffer_id == b.buffer_id && lb.dspace_id == b.dspace_id)
                   {
                     dim_in_tags = occ.dim_in_tags;
-                    auto p_lb_cap = ReduceCapacityToLastBranch(
-                      isl_map_card(occ.map.copy()),
-                      occ.dim_in_tags
-                    );
                     auto p_occ = occ.map.copy();
                     if (!p_total_occ)
                     {
@@ -242,10 +235,6 @@ IntermediateResult ComputeCapacityFromMapping(
                   if (lb.buffer_id == b.buffer_id && lb.dspace_id == b.dspace_id)
                   {
                     dim_in_tags = occ.dim_in_tags;
-                    auto p_lb_cap = ReduceCapacityToLastBranch(
-                      isl_map_card(occ.map.copy()),
-                      occ.dim_in_tags
-                    );
                     auto p_occ = occ.map.copy();
                     if (!p_total_occ)
                     {
@@ -274,10 +263,6 @@ IntermediateResult ComputeCapacityFromMapping(
                 if (lb.buffer_id == b.buffer_id && lb.dspace_id == b.dspace_id)
                 {
                   dim_in_tags = occ.dim_in_tags;
-                  auto p_lb_cap = ReduceCapacityToLastBranch(
-                    isl_map_card(occ.map.copy()),
-                    occ.dim_in_tags
-                  );
                   auto p_occ = occ.map.copy();
                   if (!p_total_occ)
                   {

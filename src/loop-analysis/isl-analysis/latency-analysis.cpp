@@ -6,6 +6,17 @@
 namespace analysis
 {
 
+size_t
+CalculateLatency(const std::map<LogicalComputeUnit, OpOccupancy> occupancies)
+{
+  (void) occupancies;
+  for (const auto& [lcomp, occ] : occupancies)
+  {
+    std::cout << lcomp << ": " << occ;
+  }
+  return 0;
+}
+
 void ComputeLatency::CalculateLatency(LatencyAggregator&)
 {
 }

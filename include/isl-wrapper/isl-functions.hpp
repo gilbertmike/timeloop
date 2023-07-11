@@ -11,8 +11,12 @@ size_t dim(const map& map, isl_dim_type dim_type);
 
 map dim_projector(space space, isl_dim_type dim_type, size_t start, size_t n);
 isl_map* dim_projector(__isl_take isl_space* space, size_t start, size_t n);
+
 /**
- * @brief Projects out isl_dim_in if element in mask is true
+ * @brief Reverse of map that out isl_dim_in if element in mask is true.
+ * 
+ * For example, a space [i0, i1, i2] with mask [True, True, False] yields
+ *  [i2] -> [i0, i1, i2]
  */
 template<typename RangeT>
 isl_map* dim_projector(__isl_take isl_space* space, RangeT mask)

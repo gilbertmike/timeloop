@@ -2,10 +2,13 @@
 
 #include <barvinok/isl.h>
 
-#include "mapping/fused-mapping.hpp"
+#include "loop-analysis/isl-ir.hpp"
 
 namespace analysis 
 {
+
+size_t
+CalculateLatency(const std::map<LogicalComputeUnit, OpOccupancy> occupancies);
 
 using LatencyId = size_t;
 struct LatencyAggregator;

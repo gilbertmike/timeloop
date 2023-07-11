@@ -199,14 +199,13 @@ Application::Application(config::CompoundConfig* config,
     isl_pw_qpolynomial_free(p_ops);
   }
 
-  auto& latency_aggregator =
-    mapping_analysis_result.compute_latency_aggregator;
-  auto latency = latency_aggregator.CalculateLatency();
+  auto latency = CalculateLatency(mapping_analysis_result.lcomp_to_occupancy);
   std::cout << "[Latency]: " << latency << std::endl;
 
   auto capacities = ComputeCapacityFromMapping(
     mapping,
-    mapping_analysis_result.lbuf_to_occupancy
+    mapping_analysis_result.lbuf_to_occupancy,
+    workload
   );
 
   // // for (const auto& [buf, fill] : fills)

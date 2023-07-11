@@ -130,7 +130,6 @@ loop-analysis/isl-analysis/capacity-analysis.cpp
 loop-analysis/isl-analysis/isl-nest-analysis.cpp
 loop-analysis/isl-analysis/isl-to-legacy-adaptor.cpp
 loop-analysis/isl-analysis/latency-analysis.cpp
-loop-analysis/logical-buffer.cpp
 loop-analysis/loop-state.cpp
 loop-analysis/mapping-to-isl/fused-mapping-to-isl.cpp
 loop-analysis/mapping-to-isl/mapping-to-isl.cpp
