@@ -16,6 +16,16 @@ struct BufferInfo
   bool right_above_branch;
 };
 
+std::map<BufferId, isl_pw_qpolynomial*> ComputeCapacityFromMapping(
+  mapping::NodeID cur_node_id,
+  size_t n_loops,
+  std::vector<BufferInfo>& buffers,
+  mapping::FusedMapping& mapping,
+  const std::map<LogicalBuffer, Occupancy>& occupancies,
+  const problem::FusedWorkload& workload,
+  const std::map<mapping::NodeID, std::set<EinsumID>> node_to_einsums
+);
+
 template<typename RangeT>
 isl_pw_qpolynomial*
 ReduceCapacityToLastBranch(__isl_take isl_pw_qpolynomial* p_cap,
@@ -102,6 +112,16 @@ std::map<mapping::BufferId, isl_pw_qpolynomial*> ComputeCapacityFromMapping(
 {
   auto final_result = std::map<mapping::BufferId, isl_pw_qpolynomial*>();
   auto node_to_einsums = GatherEinsumFromLeaves(mapping);
+  auto buffers = std::vector<BufferInfo>();
+  return ComputeCapacityFromMapping(
+    mapping.GetRoot().id,
+    0,
+    buffers,
+    mapping,
+    occupancies,
+    workload,
+    node_to_einsums
+  );
 }
 
 std::map<BufferId, isl_pw_qpolynomial*> ComputeCapacityFromMapping(
@@ -137,11 +157,6 @@ std::map<BufferId, isl_pw_qpolynomial*> ComputeCapacityFromMapping(
           b.right_above_branch = false;
         }
       }
-      else if constexpr (std::is_same_v<T, mapping::Compute>
-                         || mapping::IsBranchV<T>)
-      {
-        buffers.clear();
-      }
 
       auto to_agg_from_children = std::map<BufferId, isl_pw_qpolynomial*>();
       if constexpr (mapping::HasOneChildV<T>)
@@ -164,10 +179,11 @@ std::map<BufferId, isl_pw_qpolynomial*> ComputeCapacityFromMapping(
       {
         for (auto child : node.children)
         {
+          auto child_buffers = std::vector<BufferInfo>();
           auto to_agg_from_child = 
             ComputeCapacityFromMapping(child,
                                        n_loops,
-                                       buffers,
+                                       child_buffers,
                                        mapping,
                                        occupancies,
                                        workload,
@@ -348,6 +364,10 @@ std::map<BufferId, isl_pw_qpolynomial*> ComputeCapacityFromMapping(
             to_aggregate[buf_id] = p_cur_cap;
           }
         }
+      }
+      else
+      {
+        to_aggregate = to_agg_from_children;
       }
     },
     node
