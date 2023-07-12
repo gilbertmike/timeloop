@@ -54,8 +54,7 @@ aff si_on_domain(space space, int val);
 
 map add_dims(map map, isl_dim_type dim_type, size_t n_dims);
 
-map insert_dims(map map,
-                isl_dim_type dim_type, size_t pos, size_t n_dims);
+map insert_dims(map map, isl_dim_type dim_type, size_t pos, size_t n_dims);
 
 map move_dims(map map,
               isl_dim_type dst_dim_type, size_t dst,
@@ -69,6 +68,10 @@ map map_to_shifted(space domain_space, size_t pos, int shift);
 map map_to_all_at_dim(space domain_space, size_t pos);
 
 map fix_si(map map, isl_dim_type dim_type, size_t pos, int val);
+
+__isl_give isl_map* bound_dim_si(__isl_take isl_map* map,
+                                 isl_dim_type dim_type, size_t pos,
+                                 int lower, int upper);
 
 map insert_equal_dims(map map, size_t in_pos, size_t out_pos, size_t n);
 

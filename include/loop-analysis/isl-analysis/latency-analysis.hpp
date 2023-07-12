@@ -7,9 +7,6 @@
 namespace analysis 
 {
 
-size_t
-CalculateLatency(const std::map<LogicalComputeUnit, OpOccupancy> occupancies);
-
 using LatencyId = size_t;
 struct LatencyAggregator;
 

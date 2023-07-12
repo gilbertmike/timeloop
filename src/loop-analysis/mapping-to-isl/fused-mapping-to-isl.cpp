@@ -3,6 +3,7 @@
 #include "isl-wrapper/isl-functions.hpp"
 
 #include <boost/range/adaptor/indexed.hpp>
+#include <boost/range/adaptor/reversed.hpp>
 #include <barvinok/isl.h>
 
 bool gDumpIslIr =
@@ -191,6 +192,7 @@ GetParallelism(mapping::FusedMapping& mapping)
 std::map<mapping::NodeID, std::set<problem::EinsumId>>
 GetMappingGroupEinsums(mapping::FusedMapping& mapping)
 {
+  using namespace boost::adaptors;
   using namespace mapping;
   using namespace problem;
 
@@ -246,15 +248,13 @@ GetMappingGroupEinsums(mapping::FusedMapping& mapping)
     );
   }
 
-  for (size_t i = 0; i < child_stack.size(); ++i)
+  for (const auto& [node_id, children] : child_stack | reversed)
   {
-    const auto& [node_id, children] = child_stack.back();
     auto& einsum_set = result[node_id];
     for (const auto& child : children)
     {
       einsum_set.insert(result.at(child).begin(), result.at(child).end());
     }
-    child_stack.pop_back();
   }
 
   return result;
