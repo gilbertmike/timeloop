@@ -2,6 +2,7 @@
 
 #include <variant>
 #include <isl/cpp.h>
+#include <iostream>
 #include "loop-analysis/isl-ir.hpp"
 
 struct IslBinding
@@ -39,3 +40,8 @@ struct BindingSpec
 };
 
 IslBinding BindingToIsl(const BindingSpec& spec);
+
+std::ostream& operator<<(std::ostream&, const SpatialPartition&);
+std::ostream& operator<<(std::ostream&, const SpatialDuplicate&);
+std::ostream& operator<<(std::ostream&, const BindingDescriptor&);
+std::ostream& operator<<(std::ostream&, const BindingSpec&);
