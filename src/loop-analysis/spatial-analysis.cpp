@@ -416,7 +416,8 @@ TransferInfo DistributedMulticastModel::Apply(
   (void) buf_id;
   (void) fills;
   (void) occupancy;
-  throw std::logic_error("not implemented");
+
+  std::cout << 
 }
 
 /******************************************************************************
