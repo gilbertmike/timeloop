@@ -47,6 +47,9 @@ venv
 .devcontainer
 .devcontainer.json
 
+# VSCode workspace settings
+.vscode/
+
 # MacOS-specific files.
 .DS_Store
 
