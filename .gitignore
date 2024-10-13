@@ -50,6 +50,9 @@ venv
 # VSCode workspace settings
 .vscode/
 
+# Scons logs.
+scons.log
+
 # MacOS-specific files.
 .DS_Store
 
