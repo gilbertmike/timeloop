@@ -133,6 +133,8 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticast_Model)
   std::string M = std::to_string(M_int);
   std::string N = std::to_string(N_int);
   std::vector<int> D_vals({1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024});
+  std::string str(D_vals.begin(), D_vals.end()-1);
+  std::cout << "D_vals: " << str << std::endl;
   isl_ctx *p_ctx = isl_ctx_alloc();
 
   for (int D_int : D_vals) {
@@ -160,7 +162,9 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticast_Model)
 
     auto multicast_model = DistributedMulticastModel(true);
     auto info = multicast_model.Apply(0, fill, occ);
-
+    isl_val *sum_extract = isl_pw_qpolynomial_eval(info.p_hops, isl_point_zero(isl_pw_qpolynomial_get_domain_space(info.p_hops)));
+    long ret = isl_val_get_num_si(sum_extract);
+    std::cout << ret << std::endl;
     // BOOST_CHECK(info.fulfilled_fill.map.is_equal(
     //   isl::map(
     //     GetIslCtx(),

@@ -623,13 +623,13 @@ __isl_give const isl::map identify_mesh_casts(
     multicast_networks = isl_map_uncurry(multicast_networks);
     multicast_networks = isl_map_lexmin(multicast_networks);
     multicast_networks = isl_map_curry(multicast_networks);
-    isl::map ret = isl::map(GetIslCtx(), std::string(isl_map_to_str(multicast_networks)));
-    
+    isl::map ret = isl::manage(multicast_networks);
+
     return ret;
 }
 
 
-long cost_mesh_cast(
+isl_pw_qpolynomial* cost_mesh_cast(
     __isl_take const isl::map mesh_cast_networks_safe,
     __isl_take const isl::map dist_func_safe
 ) { 
@@ -665,10 +665,10 @@ long cost_mesh_cast(
     // Does the addition over range.
     isl_pw_qpolynomial *sum = isl_pw_qpolynomial_sum(isl_pw_qpolynomial_sum(dirty_distances_fold));
     // Grabs the return value as an isl_val.
-    isl_val *sum_extract = isl_pw_qpolynomial_eval(sum, isl_point_zero(isl_pw_qpolynomial_get_domain_space(sum)));
-    long ret = isl_val_get_num_si(sum_extract);
+    // isl_val *sum_extract = isl_pw_qpolynomial_eval(sum, isl_point_zero(isl_pw_qpolynomial_get_domain_space(sum)));
+    // long ret = isl_val_get_num_si(sum_extract);
 
-    return ret;
+    return sum;
 }
 
 
@@ -705,8 +705,15 @@ TransferInfo DistributedMulticastModel::Apply(
     fills.map, 
     dist_func
   );
-  long res = cost_mesh_cast(mcs, dist_func);
-  std::cout << res << std::endl;
+  isl_pw_qpolynomial* res = cost_mesh_cast(mcs, dist_func);
+
+  // TODO:: Read once from all buffers, assert that card(mcs) == tensor_size * D
+  return TransferInfo{
+    .fulfilled_fill=Transfers(fills.dim_in_tags, fills.map),
+    .parent_reads=Reads(occupancy.dim_in_tags, mcs),
+    .unfulfilled_fill=Fill(fills.dim_in_tags, fills.map.subtract(fills.map)),
+    .p_hops=res,
+  };
 }
 
 } // namespace analysis
