@@ -133,43 +133,32 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticast_Model)
   std::string M = std::to_string(M_int);
   std::string N = std::to_string(N_int);
   std::vector<int> D_vals({1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024});
-  clock_t start, end;
-  double cpu_time_used;
   isl_ctx *p_ctx = isl_ctx_alloc();
 
   for (int D_int : D_vals) {
-    start = clock();
+    std::cout << "D: " << D_int << std::endl;
     std::string D = std::to_string(D_int);
-    // Defines the src occupancy map as a string.
-    std::string src_occupancy = "{src[xs, ys] -> data[a, b] : ("+D+"*xs)%"+M+" <= a <= ("+
-                                D+"*xs+"+D+"-1)%"+M+" and b=ys and 0 <= xs < "+M+
-                                " and 0 <= ys < "+N+" and 0 <= a < "+M+" and 0 <= b < "+N+" }";
+    // Defines the dst fill map as a string.
+    std::string dst_fill =  "{dst[xd, yd] -> data[a, b] : b=yd and 0 <= xd < "+M+
+                            " and 0 <= yd < "+N+" and 0 <= a < "+M+" and 0 <= b < "+N+" }";
     auto fill = Fill(
       {Spatial(0, 0), Spatial(1, 0)},
       isl::map(
         GetIslCtx(),
-        src_occupancy
+        dst_fill
       )
-    )
-    // Defines the dst fill map as a string.
-    std::string dst_fill =  "{dst[xd, yd] -> data[a, b] : b=yd and 0 <= xd < "+M+
-                            " and 0 <= yd < "+N+" and 0 <= a < "+M+" and 0 <= b < "+N+" }";
-    auto occ = Occupancy(fill.dim_in_tags, fill.map);
-
-    // Defines the distance function string.
-    std::string dist_func_str = R"DIST({
-        [dst[xd, yd] -> src[xs, ys]] -> dist[(xd - xs) + (yd - ys)] : 
-            xd >= xs and yd >= ys;
-        [dst[xd, yd] -> src[xs, ys]] -> dist[-(xd - xs) + -(yd - ys)] : 
-            xd < xs and yd < ys;
-        [dst[xd, yd] -> src[xs, ys]] -> dist[-(xd - xs) + (yd - ys)] : 
-            xd < xs and yd >= ys;
-        [dst[xd, yd] -> src[xs, ys]] -> dist[(xd - xs) + -(yd - ys)] : 
-            xd >= xs and yd < ys
-        })DIST";
+    );
+    // Defines the src occupancy map as a string.
+    std::string src_occupancy = "{src[xs, ys] -> data[a, b] : ("+D+"*xs)%"+M+" <= a <= ("+
+                                D+"*xs+"+D+"-1)%"+M+" and b=ys and 0 <= xs < "+M+
+                                " and 0 <= ys < "+N+" and 0 <= a < "+M+" and 0 <= b < "+N+" }";
+    auto occ = Occupancy(fill.dim_in_tags, 
+      isl::map(
+        GetIslCtx(),
+        src_occupancy
+    ));
 
     auto multicast_model = DistributedMulticastModel(true);
-
     auto info = multicast_model.Apply(0, fill, occ);
 
     // BOOST_CHECK(info.fulfilled_fill.map.is_equal(
@@ -196,13 +185,5 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticast_Model)
     //   BOOST_CHECK(stats.accesses == 40);
     //   BOOST_TEST(stats.hops == 5.2, boost::test_tools::tolerance(0.001));
     // }
-
-    // isl_map *mcs = identify_mesh_casts(p_ctx, src_occupancy, dst_fill, dist_func_str);
-    // DUMP(mcs);
-    // long res = cost_mesh_cast(p_ctx, isl_map_to_str(mcs), dist_func_str);
-    // std::cout << res << std::endl;
-    // end = clock();
-    // cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-    // std::cout << "Time: " << cpu_time_used << std::endl;
   }
 }
