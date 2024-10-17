@@ -128,66 +128,15 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticast_Model)
 {
   using namespace analysis;
 
-  int M_int = 1024;
-  int N_int = 1024;
-  std::string M = std::to_string(M_int);
-  std::string N = std::to_string(N_int);
-  std::vector<int> D_vals({1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024});
-  std::string str(D_vals.begin(), D_vals.end()-1);
-  std::cout << "D_vals: " << str << std::endl;
-  isl_ctx *p_ctx = isl_ctx_alloc();
-
-  for (int D_int : D_vals) {
-    std::cout << "D: " << D_int << std::endl;
-    std::string D = std::to_string(D_int);
-    // Defines the dst fill map as a string.
-    std::string dst_fill =  "{dst[xd, yd] -> data[a, b] : b=yd and 0 <= xd < "+M+
-                            " and 0 <= yd < "+N+" and 0 <= a < "+M+" and 0 <= b < "+N+" }";
+  std::string TEST_CASES_FILE = "test_cases.yaml";
+  YAML::Node test_cases = YAML::LoadFile(TEST_CASES_FILE);
+  
+  for (auto test : test_cases) {
+    // Read test case parameters
+    int buf_id = 0;
     auto fill = Fill(
-      {Spatial(0, 0), Spatial(1, 0)},
-      isl::map(
-        GetIslCtx(),
-        dst_fill
-      )
+      test["fill"]["dim_in_tags"].as<std::vector<SpaceTime>>(),
+      isl::map(GetIslCtx(), test["fill"]["map"].as<std::string>())
     );
-    // Defines the src occupancy map as a string.
-    std::string src_occupancy = "{src[xs, ys] -> data[a, b] : ("+D+"*xs)%"+M+" <= a <= ("+
-                                D+"*xs+"+D+"-1)%"+M+" and b=ys and 0 <= xs < "+M+
-                                " and 0 <= ys < "+N+" and 0 <= a < "+M+" and 0 <= b < "+N+" }";
-    auto occ = Occupancy(fill.dim_in_tags, 
-      isl::map(
-        GetIslCtx(),
-        src_occupancy
-    ));
-
-    auto multicast_model = DistributedMulticastModel(true);
-    auto info = multicast_model.Apply(0, fill, occ);
-    isl_val *sum_extract = isl_pw_qpolynomial_eval(info.p_hops, isl_point_zero(isl_pw_qpolynomial_get_domain_space(info.p_hops)));
-    long ret = isl_val_get_num_si(sum_extract);
-    std::cout << ret << std::endl;
-    // BOOST_CHECK(info.fulfilled_fill.map.is_equal(
-    //   isl::map(
-    //     GetIslCtx(),
-    //     nullptr
-    //   )
-    // ));
-
-    // BOOST_CHECK(info.parent_reads.map.is_equal(
-    //   isl::map(
-    //     GetIslCtx(),
-    //     nullptr
-    //   )
-    // ));
-
-    // BOOST_CHECK(info.compat_access_stats.size() == 1);
-    // for (const auto& [multicast_scatter, stats] : info.compat_access_stats)
-    // {
-    //   auto [multicast, scatter] = multicast_scatter;
-
-    //   BOOST_CHECK(multicast == 1);
-    //   BOOST_CHECK(scatter == 1);
-    //   BOOST_CHECK(stats.accesses == 40);
-    //   BOOST_TEST(stats.hops == 5.2, boost::test_tools::tolerance(0.001));
-    // }
   }
 }
