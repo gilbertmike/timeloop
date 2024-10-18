@@ -124,19 +124,49 @@ BOOST_AUTO_TEST_CASE(TestSimpleMulticastModel_SpatialPC)
   }
 }
 
+
+std::vector<analysis::SpaceTime> construct_space_time(const YAML::Node &dims)
+{
+  std::vector<analysis::SpaceTime> space_time;
+  for (YAML::Node dim : dims)
+  {
+    if (dim["type"].as<std::string>() == "Temporal")
+    {
+      throw std::runtime_error("Temporal tag not supported");
+    }
+    else if (dim["type"].as<std::string>() == "Spatial")
+    {
+      space_time.push_back(analysis::Spatial(dim["spatial_dim"].as<int>(), dim["target"].as<int>()));
+    }
+  }
+  return space_time;
+}
+
+
 BOOST_AUTO_TEST_CASE(TestDistributedMulticast_Model)
 {
   using namespace analysis;
 
-  std::string TEST_CASES_FILE = "test_cases.yaml";
+  std::string TEST_CASES_FILE = "./src/unit-test/multicast/test_cases.yaml";
   YAML::Node test_cases = YAML::LoadFile(TEST_CASES_FILE);
   
   for (auto test : test_cases) {
     // Read test case parameters
     int buf_id = 0;
-    auto fill = Fill(
-      test["fill"]["dim_in_tags"].as<std::vector<SpaceTime>>(),
-      isl::map(GetIslCtx(), test["fill"]["map"].as<std::string>())
+    auto dims = construct_space_time(test["dims"]);
+    Fill fill = Fill(
+      dims,
+      isl::map(GetIslCtx(), test["fill"].as<std::string>())
     );
+    Occupancy occ = Occupancy(
+      dims,
+      isl::map(GetIslCtx(), test["occ"].as<std::string>())
+    );
+    isl::map dist_func = isl::map(GetIslCtx(), test["dist_func"].as<std::string>());
+    auto multicast_model = DistributedMulticastModel(true);
+    TransferInfo info = multicast_model.Apply(buf_id, fill, occ);
+    isl_val *sum_extract = isl_pw_qpolynomial_eval(info.p_hops, isl_point_zero(isl_pw_qpolynomial_get_domain_space(info.p_hops)));
+    long ret = isl_val_get_num_si(sum_extract);
+    std::cout << "Number of hops: " << ret << std::endl;
   }
 }

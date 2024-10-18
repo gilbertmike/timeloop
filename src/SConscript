@@ -321,7 +321,7 @@ unit-test/compound-config/test-compound-config.cpp
 unittest_sources = Split("""
 unit-test/test-main.cpp
 unit-test/test-simple-link-transfer.cpp
-unit-test/test-multicast.cpp
+unit-test/multicast/test-multicast.cpp
 unit-test/test-isl-functions.cpp
 unit-test/test-mapping-to-isl.cpp
 unit-test/test-temporal-reuse-analysis.cpp

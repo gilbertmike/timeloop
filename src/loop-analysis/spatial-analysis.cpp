@@ -682,11 +682,6 @@ TransferInfo DistributedMulticastModel::Apply(
   (void) fills;
   (void) occupancy;
 
-  std::cout << buf_id << std::endl;
-  std::cout << fills << std::endl;
-  std::cout << occupancy << std::endl;
-
-
   // Defines the distance function string.
   std::string dist_func_str = R"DIST({
       [dst[xd, yd] -> src[xs, ys]] -> dist[(xd - xs) + (yd - ys)] : 
