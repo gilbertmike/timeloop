@@ -150,17 +150,21 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticast_Model)
   std::string TEST_CASES_FILE = "./src/unit-test/multicast/test_cases.yaml";
   YAML::Node test_cases = YAML::LoadFile(TEST_CASES_FILE);
   
-  for (auto test : test_cases) {
+  for (auto test : test_cases.as<std::vector<YAML::Node>>()) {
     // Read test case parameters
     int buf_id = 0;
+    std::string fill_str = test["fill"].as<std::string>();
+    std::cout << "Fill: " << fill_str << std::endl;
     auto dims = construct_space_time(test["dims"]);
     Fill fill = Fill(
       dims,
-      isl::map(GetIslCtx(), test["fill"].as<std::string>())
+      isl::map(GetIslCtx(), fill_str)
     );
+    std::string occ_str = test["occ"].as<std::string>();
+    std::cout << "Occupancy: " << occ_str << std::endl;
     Occupancy occ = Occupancy(
       dims,
-      isl::map(GetIslCtx(), test["occ"].as<std::string>())
+      isl::map(GetIslCtx(), occ_str)
     );
     isl::map dist_func = isl::map(GetIslCtx(), test["dist_func"].as<std::string>());
     auto multicast_model = DistributedMulticastModel(true);
