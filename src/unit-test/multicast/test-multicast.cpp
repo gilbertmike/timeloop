@@ -154,23 +154,26 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticast_Model)
     // Read test case parameters
     int buf_id = 0;
     std::string fill_str = test["fill"].as<std::string>();
-    std::cout << "Fill: " << fill_str << std::endl;
     auto dims = construct_space_time(test["dims"]);
     Fill fill = Fill(
       dims,
       isl::map(GetIslCtx(), fill_str)
     );
     std::string occ_str = test["occ"].as<std::string>();
-    std::cout << "Occupancy: " << occ_str << std::endl;
     Occupancy occ = Occupancy(
       dims,
       isl::map(GetIslCtx(), occ_str)
     );
     isl::map dist_func = isl::map(GetIslCtx(), test["dist_func"].as<std::string>());
+    // Apply the model
     auto multicast_model = DistributedMulticastModel(true);
     TransferInfo info = multicast_model.Apply(buf_id, fill, occ);
-    isl_val *sum_extract = isl_pw_qpolynomial_eval(info.p_hops, isl_point_zero(isl_pw_qpolynomial_get_domain_space(info.p_hops)));
-    long ret = isl_val_get_num_si(sum_extract);
-    std::cout << "Number of hops: " << ret << std::endl;
+    // Check the results
+    isl::val sum_extract = isl::manage(isl_pw_qpolynomial_eval(
+      info.p_hops, isl_point_zero(isl_pw_qpolynomial_get_domain_space(info.p_hops))
+    ));
+    long ret = sum_extract.get_num_si();
+    
+    assert(ret == test["expected"]["multicast_hops"].as<long>());
   }
 }

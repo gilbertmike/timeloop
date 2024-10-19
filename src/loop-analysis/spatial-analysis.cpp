@@ -623,50 +623,43 @@ __isl_give const isl::map identify_mesh_casts(
     multicast_networks = isl_map_uncurry(multicast_networks);
     multicast_networks = isl_map_lexmin(multicast_networks);
     multicast_networks = isl_map_curry(multicast_networks);
-    isl::map ret = isl::manage(multicast_networks);
 
-    return ret;
+    return isl::manage(multicast_networks);
 }
 
 
 isl_pw_qpolynomial* cost_mesh_cast(
-    __isl_take const isl::map mesh_cast_networks_safe,
-    __isl_take const isl::map dist_func_safe
+    __isl_take const isl::map mesh_cast_networks,
+    __isl_take const isl::map dist_func
 ) { 
-    // Unwraps to use the map.
-    isl_map *mesh_cast_networks = mesh_cast_networks_safe.copy();
-    isl_map *dist_func = dist_func_safe.copy();
     /**
      * Makes mesh_cash_networks from [a, b] -> [[xd, yd] -> [xs -> ys]] to 
      * [[a, b] -> [xs, ys]] -> [xd, yd]
      */
-    mesh_cast_networks = isl_map_range_reverse(mesh_cast_networks);
-    // Uncurrys the mesh_cast_networks to [[a, b] -> [xs, ys]] -> [xd, yd]
-    mesh_cast_networks = isl_map_uncurry(mesh_cast_networks);
+    isl::map potential_sources = mesh_cast_networks.range_reverse().uncurry();
     
     // Projects away the xd dimension from mesh_cast_networks.
-    isl_map *multicast_simplification = isl_map_project_out(mesh_cast_networks, isl_dim_out, 1, 1);
+    isl::map multicast_simplification = isl::manage(
+      isl_map_project_out(potential_sources.copy(), isl_dim_out, 0, 1) /// @todo: Dynamically deetermine DOR.
+    );
     // Finds max(yd) - min(yd) for each [a, b] -> [xs, ys].
-    isl_map *multicast_max = isl_map_lexmax(isl_map_copy(multicast_simplification));
-    isl_map *multicast_min = isl_map_lexmin(multicast_simplification);
+    isl::map multicast_max = multicast_simplification.lexmax();
+    isl::map multicast_min = multicast_simplification.lexmin();
     // Subtracts the max from the min to get the range.
-    isl_map *multicast_min_neg = isl_map_neg(multicast_min);
-    isl_map *multi_cast_cost = isl_map_sum(multicast_max, multicast_min);
+    isl::map multi_cast_cost = multicast_max.subtract(multicast_min);
 
     // Converts to a qpolynomial for addition over range.
-    isl_multi_pw_aff *dirty_distances_aff =isl_multi_pw_aff_from_pw_multi_aff(
-        isl_pw_multi_aff_from_map(multi_cast_cost)
+    isl::multi_pw_aff dirty_total_multicast_aff = isl::manage(
+      isl_multi_pw_aff_from_pw_multi_aff(
+        isl_pw_multi_aff_copy(multi_cast_cost.as_pw_multi_aff().get())
+      )
     );
-    assert(isl_multi_pw_aff_size(dirty_distances_aff) == 1);
-    isl_pw_aff *distances_aff = isl_multi_pw_aff_get_at(dirty_distances_aff, 0);
-    isl_multi_pw_aff_free(dirty_distances_aff);
-    auto *dirty_distances_fold = isl_pw_qpolynomial_from_pw_aff(distances_aff);
-
-    // Does the addition over range.
-    isl_pw_qpolynomial *sum = isl_pw_qpolynomial_sum(isl_pw_qpolynomial_sum(dirty_distances_fold));
-    // Grabs the return value as an isl_val.
-    // isl_val *sum_extract = isl_pw_qpolynomial_eval(sum, isl_point_zero(isl_pw_qpolynomial_get_domain_space(sum)));
-    // long ret = isl_val_get_num_si(sum_extract);
+    assert(dirty_total_multicast_aff.size() == 1);
+    isl::pw_aff distances_aff = dirty_total_multicast_aff.get_at(0);
+    // Sums the distances together to create the total cost.
+    isl_pw_qpolynomial *sum = isl_pw_qpolynomial_sum(isl_pw_qpolynomial_sum(
+      isl_pw_qpolynomial_from_pw_aff(distances_aff.copy())
+    ));
 
     return sum;
 }
@@ -679,8 +672,6 @@ TransferInfo DistributedMulticastModel::Apply(
 ) const
 {
   (void) buf_id;
-  (void) fills;
-  (void) occupancy;
 
   // Defines the distance function string.
   std::string dist_func_str = R"DIST({
@@ -700,7 +691,7 @@ TransferInfo DistributedMulticastModel::Apply(
     fills.map, 
     dist_func
   );
-  isl_pw_qpolynomial* res = cost_mesh_cast(mcs, dist_func);
+  isl_pw_qpolynomial *res = cost_mesh_cast(mcs, dist_func);
 
   // TODO:: Read once from all buffers, assert that card(mcs) == tensor_size * D
   return TransferInfo{
