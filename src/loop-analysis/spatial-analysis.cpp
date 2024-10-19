@@ -576,9 +576,9 @@ __isl_give const isl::map identify_mesh_casts(
 ) {
     /* Makes [[dst -> data] -> dst] -> [data] */
     isl::set wrapped_dst_fill = dst_fill.wrap();
-    isl::map wrapped_fill_identity = isl::manage(isl_map_identity(isl_space_map_from_set(isl_set_get_space(
-      wrapped_dst_fill.copy()
-    ))));
+    isl::map wrapped_fill_identity = isl::manage(isl_map_identity(
+      isl_space_copy(wrapped_dst_fill.get_space().map_from_set().get())
+    ));
     wrapped_fill_identity = wrapped_fill_identity.intersect_domain(wrapped_dst_fill);
 
     /* Makes [dst -> data] -> [dst -> data] */
@@ -588,22 +588,20 @@ __isl_give const isl::map identify_mesh_casts(
     * i.e. {src -> data} becomes {data -> src} */
     isl::map data_presence = src_occupancy.reverse();
 
-    isl::map dst_to_data_to_dst_TO_src = uncurried_fill_identity.apply_range(
+    isl::map fills_to_dst_TO_src = uncurried_fill_identity.apply_range(
       data_presence
     );
-    isl::map dst_to_data_TO_dst_to_src = dst_to_data_to_dst_TO_src.curry();
+    isl::map fills_to_potential_routes = fills_to_dst_TO_src.curry();
 
     // Calculates the distance of all the dst-src pairs with matching data.
-    isl::map distances_map = dst_to_data_TO_dst_to_src.apply_range(dist_func);
-    isl::map dst_to_data_TO_dst_to_src_TO2_dst_to_src = isl::manage(
-      isl_map_range_map(dst_to_data_TO_dst_to_src.copy())
-    );
-    isl::map dst_to_data_TO_dst_to_src_TO2_dist = dst_to_data_TO_dst_to_src_TO2_dst_to_src.apply_range(dist_func);
+    isl::map distances_map = fills_to_potential_routes.apply_range(dist_func);
+    isl::map fills_to_potential_routes_TO_potential_routes = fills_to_potential_routes.range_map().as_map();
+    isl::map fills_to_potential_routes_TO_dist = fills_to_potential_routes_TO_potential_routes.apply_range(dist_func);
 
     // Gets the minimal distance pairs.
     isl::map lexmin_distances = distances_map.lexmin();
     isl::map assoc_dist_with_src = lexmin_distances.apply_range(
-        dst_to_data_TO_dst_to_src_TO2_dist.reverse()
+         fills_to_potential_routes_TO_dist.reverse()
     );
     // Isolates the relevant minimal pairs.
     isl::map minimal_pairs = assoc_dist_with_src.range().unwrap();

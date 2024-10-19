@@ -174,6 +174,7 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticast_Model)
     ));
     long ret = sum_extract.get_num_si();
     
+    std::cout << ret << std::endl;
     assert(ret == test["expected"]["multicast_hops"].as<long>());
   }
 }
