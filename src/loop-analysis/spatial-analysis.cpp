@@ -526,45 +526,6 @@ std::vector<bool> MakeMulticastDimRemoveMask(
 ////////////////////////////////////////////////////////////////////////////////
 // Multicast Model Pit of Temporary Spaghetti
 ////////////////////////////////////////////////////////////////////////////////
-/// @brief Strings representing the src and dst datum holds/requests in ISL.
-struct binding_struct
-{
-  const std::string srcs;
-  const std::string dsts;
-};
-typedef std::shared_ptr<binding_struct> binding;
-/// @brief Represents the cost of abstracting a binding to a higher level.
-struct abstraction_cost_struct
-{
-  const long fold_cost;
-  const long multicast_cost;
-};
-typedef std::shared_ptr<abstraction_cost_struct> abstraction_cost;
-/// @brief Struct with the abstracted binding + the cost of abstracting it.
-struct abstracted_binding_struct
-{
-  const binding abstraction;
-  const abstraction_cost cost;
-};
-typedef std::unique_ptr<abstracted_binding_struct> abstracted_binding;
-/** 
- * @brief Defines the struct that comprises the result of folding and the unique
- * ptr to it that represents what is returned by fold.
- */
-struct fold_struct
-{
-  const long cost;
-  const std::string folded_repr;
-};
-typedef std::unique_ptr<fold_struct> fold_result;
-/// @brief Defines the struct characterizing the collapsing behavior of a layer.
-struct collapse_struct
-{
-  const std::string src_collapser;
-  const std::string dst_collapser;
-};
-typedef std::shared_ptr<collapse_struct> collapse;
-
 /// NOTES FOR NON-TREE MULTICAST SCENARIO
 // - Load balancing issues for multiple minimally distant sources.
 // - Compose minimal distances with the other set to remove non-minimal pairs then
