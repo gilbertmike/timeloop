@@ -22,11 +22,11 @@
         latency: 7
         total_hops: 1344
         multicast_hops: 448
--   occ: "{ src[xs, ys] -> data[d0, d1] : d0=xs and d1=ys and 0 <= xs < 8 and 0 <= ys < 8 }"
-    fill: "{ dst[xd, yd] -> data[d0, d1] : 0 <= d0 < 8 and d1=yd and 0 <= xd < 8 and 0 <= yd < 8 }"
-    dims: *2d_spatial
-    dist_func: *2d_manhattan_dist
-    expected: *equivalent_class_1
+# -   occ: "{ src[xs, ys] -> data[d0, d1] : d0=xs and d1=ys and 0 <= xs < 8 and 0 <= ys < 8 }"
+#     fill: "{ dst[xd, yd] -> data[d0, d1] : 0 <= d0 < 8 and d1=yd and 0 <= xd < 8 and 0 <= yd < 8 }"
+#     dims: *2d_spatial
+#     dist_func: *2d_manhattan_dist
+#     expected: *equivalent_class_1
 -   occ: "{ src[xs, ys] -> data[d0, d1] : d0 = xs and 0 <= d1 < 8 and 0 <= xs < 8 and 0 <= ys < 8 }"
     fill: "{ dst[xd, yd] -> data[d0, d1] : d0 = xd and d1 = yd and 0 <= xd < 8 and 0 <= yd < 8 }"
     dims: *2d_spatial

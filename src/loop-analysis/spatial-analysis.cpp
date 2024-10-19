@@ -570,61 +570,47 @@ typedef std::shared_ptr<collapse_struct> collapse;
 // - Compose minimal distances with the other set to remove non-minimal pairs then
 // move on with the rest of the algorithm.
 __isl_give const isl::map identify_mesh_casts( 
-    __isl_take const isl::map src_occupancy_safe, 
-    __isl_take const isl::map dst_fill_safe, 
-    __isl_take const isl::map dist_func_safe
+    __isl_take const isl::map src_occupancy, 
+    __isl_take const isl::map dst_fill, 
+    __isl_take const isl::map dist_func
 ) {
-    // Unpacks everything for MVP.
-    isl_map *src_occupancy = src_occupancy_safe.copy();
-    isl_map *dst_fill = dst_fill_safe.copy();
-    isl_map *dist_func = dist_func_safe.copy();
     /* Makes [[dst -> data] -> dst] -> [data] */
-    isl_set *wrapped_dst_fill = isl_map_wrap(dst_fill);
-    isl_map *wrapped_fill_identity =
-        isl_map_identity(isl_space_map_from_set(isl_set_get_space(
-            wrapped_dst_fill
-        )));
-    wrapped_fill_identity = isl_map_intersect_domain(
-        wrapped_fill_identity,
-        wrapped_dst_fill
-    );
+    isl::set wrapped_dst_fill = dst_fill.wrap();
+    isl::map wrapped_fill_identity = isl::manage(isl_map_identity(isl_space_map_from_set(isl_set_get_space(
+      wrapped_dst_fill.copy()
+    ))));
+    wrapped_fill_identity = wrapped_fill_identity.intersect_domain(wrapped_dst_fill);
 
     /* Makes [dst -> data] -> [dst -> data] */
-    isl_map *uncurried_fill_identity = isl_map_uncurry(wrapped_fill_identity);
+    isl::map uncurried_fill_identity = wrapped_fill_identity.uncurry();
 
     /* Inverts src_occupancy such that data implies source.
-    * i.e. {[xs, ys] -> [d0, d1]} becomes {[d0, d1] -> [xs, ys]} */
-    isl_map *src_occupancy_inverted = isl_map_reverse(src_occupancy);
+    * i.e. {src -> data} becomes {data -> src} */
+    isl::map data_presence = src_occupancy.reverse();
 
-    isl_map *dst_to_data_to_dst_TO_src = isl_map_apply_range(
-        uncurried_fill_identity,
-        src_occupancy_inverted
+    isl::map dst_to_data_to_dst_TO_src = uncurried_fill_identity.apply_range(
+      data_presence
     );
-    isl_map *dst_to_data_TO_dst_to_src =
-        isl_map_curry(dst_to_data_to_dst_TO_src);
+    isl::map dst_to_data_TO_dst_to_src = dst_to_data_to_dst_TO_src.curry();
 
     // Calculates the distance of all the dst-src pairs with matching data.
-    isl_map *distances_map = isl_map_apply_range(
-        isl_map_copy(dst_to_data_TO_dst_to_src), isl_map_copy(dist_func)
+    isl::map distances_map = dst_to_data_TO_dst_to_src.apply_range(dist_func);
+    isl::map dst_to_data_TO_dst_to_src_TO2_dst_to_src = isl::manage(
+      isl_map_range_map(dst_to_data_TO_dst_to_src.copy())
     );
-    isl_map *dst_to_data_TO_dst_to_src_TO2_dst_to_src = isl_map_range_map(dst_to_data_TO_dst_to_src);
-    isl_map *dst_to_data_TO_dst_to_src_TO2_dist = isl_map_apply_range(dst_to_data_TO_dst_to_src_TO2_dst_to_src, dist_func);
+    isl::map dst_to_data_TO_dst_to_src_TO2_dist = dst_to_data_TO_dst_to_src_TO2_dst_to_src.apply_range(dist_func);
 
     // Gets the minimal distance pairs.
-    isl_map *lexmin_distances = isl_map_lexmin(distances_map);
-    isl_map *assoc_dist_with_src = isl_map_apply_range(lexmin_distances, isl_map_reverse(
-        dst_to_data_TO_dst_to_src_TO2_dist
-    ));
+    isl::map lexmin_distances = distances_map.lexmin();
+    isl::map assoc_dist_with_src = lexmin_distances.apply_range(
+        dst_to_data_TO_dst_to_src_TO2_dist.reverse()
+    );
     // Isolates the relevant minimal pairs.
-    isl_map *minimal_pairs = isl_set_unwrap(isl_map_range(assoc_dist_with_src));
+    isl::map minimal_pairs = assoc_dist_with_src.range().unwrap();
     // Isolates the multicast networks.
-    isl_map *multicast_networks = isl_map_curry(minimal_pairs);
-    multicast_networks = isl_set_unwrap(isl_map_range(multicast_networks));
-    multicast_networks = isl_map_uncurry(multicast_networks);
-    multicast_networks = isl_map_lexmin(multicast_networks);
-    multicast_networks = isl_map_curry(multicast_networks);
+    isl::map multicast_networks = minimal_pairs.curry().range().unwrap().uncurry().lexmin().curry();
 
-    return isl::manage(multicast_networks);
+    return multicast_networks;
 }
 
 
