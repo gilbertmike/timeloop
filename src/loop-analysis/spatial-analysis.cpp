@@ -591,17 +591,17 @@ __isl_give const isl::map identify_mesh_casts(
   isl::map fills_to_dst_TO_src = uncurried_fill_identity.apply_range(
     data_presence
   );
-  isl::map fills_to_potential_routes = fills_to_dst_TO_src.curry();
+  isl::map fills_to_matches = fills_to_dst_TO_src.curry();
 
   // Calculates the distance of all the dst-src pairs with matching data.
-  isl::map distances_map = fills_to_potential_routes.apply_range(dist_func);
-  isl::map fills_to_potential_routes_TO_potential_routes = fills_to_potential_routes.range_map().as_map();
-  isl::map fills_to_potential_routes_TO_dist = fills_to_potential_routes_TO_potential_routes.apply_range(dist_func);
+  isl::map distances_map = fills_to_matches.apply_range(dist_func);
+  isl::map fills_to_matches_TO_matches = fills_to_matches.range_map().as_map();
+  isl::map fills_to_matches_TO_dist = fills_to_matches_TO_matches.apply_range(dist_func);
 
   // Gets the minimal distance pairs.
   isl::map lexmin_distances = distances_map.lexmin();
   isl::map assoc_dist_with_src = lexmin_distances.apply_range(
-    fills_to_potential_routes_TO_dist.reverse()
+    fills_to_matches_TO_dist.reverse()
   );
   // Isolates the relevant minimal pairs.
   isl::map minimal_pairs = assoc_dist_with_src.range().unwrap();
