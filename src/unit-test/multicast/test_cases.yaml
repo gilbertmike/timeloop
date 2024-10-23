@@ -1,5 +1,5 @@
--   occ: "{ src[xs, ys] -> data[d0, d1] : d0=xs and d1=ys and 0 <= xs < 8 and 0 <= ys < 8 }"
-    fill: "{ dst[xd, yd] -> data[d0, d1] : d0=xd and 0 <= d1 < 8 and 0 <= xd < 8 and 0 <= yd < 8 }"
+-   occ: "{ noc[xs, ys] -> data[d0, d1] : d0=xs and d1=ys and 0 <= xs < 8 and 0 <= ys < 8 }"
+    fill: "{ noc[xd, yd] -> data[d0, d1] : d0=xd and 0 <= d1 < 8 and 0 <= xd < 8 and 0 <= yd < 8 }"
     dims: &2d_spatial
         -   type: Spatial
             spatial_dim: 0
@@ -22,29 +22,29 @@
         latency: 7
         total_hops: 1344
         multicast_hops: 448
-# -   occ: "{ src[xs, ys] -> data[d0, d1] : d0=xs and d1=ys and 0 <= xs < 8 and 0 <= ys < 8 }"
-#     fill: "{ dst[xd, yd] -> data[d0, d1] : 0 <= d0 < 8 and d1=yd and 0 <= xd < 8 and 0 <= yd < 8 }"
-#     dims: *2d_spatial
-#     dist_func: *2d_manhattan_dist
-#     expected: *equivalent_class_1
--   occ: "{ src[xs, ys] -> data[d0, d1] : d0 = xs and 0 <= d1 < 8 and 0 <= xs < 8 and 0 <= ys < 8 }"
-    fill: "{ dst[xd, yd] -> data[d0, d1] : d0 = xd and d1 = yd and 0 <= xd < 8 and 0 <= yd < 8 }"
+-   occ: "{ noc[xs, ys] -> data[d0, d1] : d0=xs and d1=ys and 0 <= xs < 8 and 0 <= ys < 8 }"
+    fill: "{ noc[xd, yd] -> data[d0, d1] : 0 <= d0 < 8 and d1=yd and 0 <= xd < 8 and 0 <= yd < 8 }"
+    dims: *2d_spatial
+    dist_func: *2d_manhattan_dist
+    expected: *equivalent_class_1
+-   occ: "{ noc[xs, ys] -> data[d0, d1] : d0 = xs and 0 <= d1 < 8 and 0 <= xs < 8 and 0 <= ys < 8 }"
+    fill: "{ noc[xd, yd] -> data[d0, d1] : d0 = xd and d1 = yd and 0 <= xd < 8 and 0 <= yd < 8 }"
     dims: *2d_spatial
     dist_func: *2d_manhattan_dist
     expected:
         latency: 0
         total_hops: 0
         multicast_hops: 0
-# -   occ: "{ src[xs, ys] -> data[d0, d1] : 0 <= d0 < 8 and 0 <= d1 < 8 and (xs=0 or 3<=xs<=4 or xs=7) and (ys=0 or 3<=ys<=4 or ys=7) }"
-#     fill: "{ dst[xd, yd] -> data[d0, d1] : d0 = xd and d1 = yd and 0 <= xd < 8 and 0 <= yd < 8 }"
+# -   occ: "{ noc[xs, ys] -> data[d0, d1] : 0 <= d0 < 8 and 0 <= d1 < 8 and (xs=0 or 3<=xs<=4 or xs=7) and (ys=0 or 3<=ys<=4 or ys=7) }"
+#     fill: "{ noc[xd, yd] -> data[d0, d1] : d0 = xd and d1 = yd and 0 <= xd < 8 and 0 <= yd < 8 }"
 #     dims: *2d_spatial
 #     dist_func: *2d_manhattan_dist
 #     expected:
 #         latency: 2
 #         total_hops: 64
 #         multicast_hops: null
-# -   occ: "{ src[xs, ys] -> data[d0, d1] : d0 = xs and d1 = ys and 0 <= xs < 8 and 0 <= ys < 8 }"
-#     fill: "{ dst[xd, yd] -> data[d0, d1] : 0 <= d0 < 8 and 0 <= d1 < 8 and (xd=0 or 3<=xd<=4 or xd=7) and (yd=0 or 3<=yd<=4 or yd=7) }"
+# -   occ: "{ noc[xs, ys] -> data[d0, d1] : d0 = xs and d1 = ys and 0 <= xs < 8 and 0 <= ys < 8 }"
+#     fill: "{ noc[xd, yd] -> data[d0, d1] : 0 <= d0 < 8 and 0 <= d1 < 8 and (xd=0 or 3<=xd<=4 or xd=7) and (yd=0 or 3<=yd<=4 or yd=7) }"
 #     dist_func: *2d_manhattan_dist
 #     dims: *2d_spatial
 #     expected:
@@ -52,20 +52,20 @@
 #         total_hops: 5632
 #         multicast_hops: null
 # -   occ: | 
-#         { src[xs, ys] -> data[d0, d1] : 
+#         { noc[xs, ys] -> data[d0, d1] : 
 #             0 <= d0 < 3 and 0 <= d1 < 3 and 
 #             0 <= xs < 9 and 0 <= ys < 9 and xs % 3 = 1 and ys % 3 = 1
 #         }
-#     fill: "{ dst[xd, yd] -> data[d0, d1] : d0 = xd % 3 and d1 = yd % 3 and 0 <= xd < 9 and 0 <= yd < 9 }"
+#     fill: "{ noc[xd, yd] -> data[d0, d1] : d0 = xd % 3 and d1 = yd % 3 and 0 <= xd < 9 and 0 <= yd < 9 }"
 #     dims: *2d_spatial
 #     dist_func: *2d_manhattan_dist
 #     expected:
 #         latency: 2
 #         total_hops: 108
 #         multicast_hops: null
-# -   occ: "{ src[xs, ys] -> data[d0, d1] : d0 = xs % 3 and d1 = ys % 3 and 0 <= xs < 9 and 0 <= ys < 9 }"
+# -   occ: "{ noc[xs, ys] -> data[d0, d1] : d0 = xs % 3 and d1 = ys % 3 and 0 <= xs < 9 and 0 <= ys < 9 }"
 #     fill: |
-#         { dst[xd, yd] -> data[d0, d1] : 
+#         { noc[xd, yd] -> data[d0, d1] : 
 #             0 <= d0 < 3 and 0 <= d1 < 3 and 
 #             0 <= xd < 9 and 0 <= yd < 9 and xd % 3 = 1 and yd % 3 = 1
 #         }
