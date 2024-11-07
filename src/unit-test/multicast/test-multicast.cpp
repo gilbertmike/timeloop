@@ -143,7 +143,7 @@ std::vector<analysis::SpaceTime> construct_space_time(const YAML::Node &dims)
 }
 
 
-BOOST_AUTO_TEST_CASE(TestDistributedMulticast_Model)
+BOOST_AUTO_TEST_CASE(TestDistributedMulticastExtent_Model)
 {
   using namespace analysis;
 
@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticast_Model)
     );
     isl::map dist_func = isl::map(GetIslCtx(), test["dist_func"].as<std::string>());
     // Apply the model
-    auto multicast_model = DistributedMulticastModel(true);
+    auto multicast_model = DistributedMulticastHypercubeModel(true);
     TransferInfo info = multicast_model.Apply(buf_id, fill, occ);
     // Check the results
     isl::val sum_extract = isl::manage(isl_pw_qpolynomial_eval(
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticast_Model)
     ));
     long ret = sum_extract.get_num_si();
     
-    std::cout << ret << std::endl;
+    std::cout << "Returned Value: " << ret << std::endl;
     assert(ret == test["expected"]["multicast_hops"].as<long>());
   }
 }

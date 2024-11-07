@@ -128,10 +128,10 @@ class SimpleMulticastModel final : public SpatialReuseModel
 };
 
 
-class DistributedMulticastModel final : public SpatialReuseModel
+class DistributedMulticastHypercubeModel final : public SpatialReuseModel
 {
  public:
-  DistributedMulticastModel(bool count_hops);
+  DistributedMulticastHypercubeModel(bool count_hops);
 
   TransferInfo
   Apply(BufferId buf_id, const Fill& fills, const Occupancy& occupancy) const override;
