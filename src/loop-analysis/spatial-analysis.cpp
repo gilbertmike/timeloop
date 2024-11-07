@@ -572,7 +572,6 @@ __isl_give const isl::map identify_mesh_casts(
   return multicast_networks;
 }
 
-
 /**
  * @brief Gets the extent of each dimension per [data -> src].
  * @param mesh_cast_networks The map of [data -> src] -> dst.
@@ -654,6 +653,13 @@ std::vector<__isl_give isl::pw_aff> calculate_extents(
   return dim_extents;
 }
 
+/**
+ * @brief Calculates the cost of casting from a hypercube.
+ * @param mesh_cast_networks The map of [data -> src] -> dst.
+ * @param dist_func The map of [data -> src] -> distance.
+ * 
+ * @return A piecewise qpolynomial representing the cost of hypercube casting.
+ */
 isl_pw_qpolynomial *cost_mesh_cast_hypercube(
     __isl_take const isl::map mesh_cast_networks,
     __isl_take const isl::map dist_func
