@@ -582,20 +582,20 @@ isl_pw_qpolynomial *cost_mesh_cast_hypercube(
    * [data -> src] -> dst
    */
   isl::map potential_sources = mesh_cast_networks.range_reverse().uncurry();
-  std::cout << "Potential Sources: " << potential_sources << std::endl;
+  // std::cout << "Potential Sources: " << potential_sources << std::endl;
   isl::map sources = potential_sources.domain().unwrap().range_map().as_map();
-  std::cout << "Sources: " << sources << std::endl;
+  // std::cout << "Sources: " << sources << std::endl;
   isl::map casting_extents = isl::manage(
     isl_map_union(sources.copy(), potential_sources.copy())
   );
-  std::cout << "Casting Extents: " << casting_extents << std::endl;
+  // std::cout << "Casting Extents: " << casting_extents << std::endl;
   /// @brief Projects away all dimensions but one to find their extent for hypercube.
   unsigned dimensions = potential_sources.range_tuple_dim();
   long min_cost = LONG_MAX;
   isl_pw_qpolynomial *min_sum = nullptr;
   // Creates a mask of what to project out.
   std::vector<bool> project_out = std::vector<bool>(dimensions, true);
-  std::vector<long> extents = std::vector<long>(dimensions, 0);
+  std::vector<isl::pw_aff> dim_extents = std::vector<isl::pw_aff>(dimensions);
 
   // Gets the product of the extents of all the dimensions.
   for (unsigned noc_dim = 0; noc_dim < dimensions; noc_dim++) {
@@ -606,47 +606,73 @@ isl_pw_qpolynomial *cost_mesh_cast_hypercube(
     )).reverse();
     isl::map dim_extent_space = casting_extents.apply_range(extent_mapper);
     project_out[noc_dim] = true;
-    std::cout << "Dim Extent Space: " << dim_extent_space << std::endl;
+    // std::cout << "Dim Extent Space: " << dim_extent_space << std::endl;
 
-    // Finds max(yd) - min(yd) for each [a, b] -> [xs, ys].
+    // Finds max(noc_dim) - min(noc_dim) for each [dara -> src]
     isl::pw_aff max_extent = isl::manage(isl_map_dim_max(dim_extent_space.copy(), 0));
     isl::pw_aff min_extent = isl::manage(isl_map_dim_min(dim_extent_space.copy(), 0));
 
-    // Subtracts the max from the min to get the extent.
-    isl::pw_aff dim_extent = max_extent.sub(min_extent).coalesce();
-    // Writes the extent to the extents vector.
-    std::cout << "Dim Extent: " << dim_extent << std::endl;
-    extents[noc_dim] = dim_extent.eval(
-      isl::manage(isl_point_zero(isl_space_copy(dim_extent.domain().get_space().get())))
-    ).get_num_si();
+    // Subtracts the max from the min to get the extent per [data -> src]
+    dim_extents[noc_dim] = max_extent.sub(min_extent).coalesce();
   }
-  std::cout << "Extents: [";
-  for (auto const& e : extents) std::cout << e << ", ";
-  std::cout << "]" << std::endl;
+  // std::cout << "Extents: [";
+  // for (auto const& e : dim_extents) std::cout << e << ", ";
+  // std::cout << "]" << std::endl;
 
   // Sorts the extents in reverse order.
-  std::sort(extents.begin(), extents.end());
-  std::reverse(extents.begin(), extents.end());
+  std::sort(dim_extents.begin(), dim_extents.end(),
+    // Lambda function that returns the sum of the extents per [data -> src]
+    [](const isl::pw_aff &a, const isl::pw_aff &b) -> bool
+    {
+      // Calculates the sum of the extents for each [data -> src].
+      isl_pw_qpolynomial *a_total = isl_pw_qpolynomial_sum(isl_pw_qpolynomial_from_pw_aff(a.copy()));
+      isl_pw_qpolynomial *b_total = isl_pw_qpolynomial_sum(isl_pw_qpolynomial_from_pw_aff(b.copy()));
+
+      // Gets the constant value of the sum.
+      long a_val = isl::manage(
+        isl_pw_qpolynomial_eval(a_total, 
+          isl_point_zero(
+            isl_pw_qpolynomial_get_domain_space(a_total)
+          )
+        )
+      ).get_num_si();
+      long b_val = isl::manage(
+        isl_pw_qpolynomial_eval(b_total, 
+          isl_point_zero(
+            isl_pw_qpolynomial_get_domain_space(b_total)
+          )
+        )
+      ).get_num_si();
+      return a_val > b_val;
+    }
+  );
 
   // Tracks the hypercube cost.
-  long hypercube_cost = 0;
-  long casting_nodes = 1;
-  for (unsigned noc_dim = 0; noc_dim < dimensions; noc_dim++) {
-    hypercube_cost += extents[noc_dim] * casting_nodes;
-    casting_nodes *= (extents[noc_dim] + 1);
-  }
-
-  // returns the hypercube cost as a piecewise polynomial.
-  return isl_pw_qpolynomial_from_pw_aff(
-    isl_pw_aff_from_aff(
-      isl_aff_val_on_domain(
-        isl_local_space_from_space(
-          isl_space_set_alloc(GetIslCtx().get(), 0, dimensions)
-        ),
-        isl_val_int_from_si(GetIslCtx().get(), hypercube_cost)
-      )
+  isl::pw_aff hypercube_costs = isl::manage(
+    isl_pw_aff_zero_on_domain(
+      isl_local_space_from_space(isl_pw_aff_get_domain_space(dim_extents[0].copy()))
     )
   );
+  // Tracks the amount we are casting from the hypercube.
+  isl::val one = isl::manage(isl_val_int_from_si(GetIslCtx().get(), 1));
+  isl::pw_aff casting_volume = isl::manage(
+    isl_pw_aff_zero_on_domain(
+      isl_local_space_from_space(isl_pw_aff_get_domain_space(dim_extents[0].copy()))
+    )
+  ).add_constant(one);
+  // Calculates the cost of the hypercube.
+  for (auto& dim_extent : dim_extents) {
+    // Adds the dim_extent times the casting volume to the hypercube cost.
+    hypercube_costs = hypercube_costs.add(dim_extent.mul(casting_volume));
+    // Multiplies the dim_extent + 1 by the casting volume.
+    casting_volume = casting_volume.mul(dim_extent.add_constant(one));
+  }
+  // std::cout << "Hypercube Costs: " << hypercube_costs << std::endl;
+
+  // returns the hypercube cost as a piecewise polynomial.
+  return isl_pw_qpolynomial_sum(isl_pw_qpolynomial_sum(
+    isl_pw_qpolynomial_from_pw_aff(hypercube_costs.copy())
+  ));
 }
 
 
