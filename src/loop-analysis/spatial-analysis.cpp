@@ -573,14 +573,18 @@ __isl_give const isl::map identify_mesh_casts(
 }
 
 
-isl_pw_qpolynomial *cost_mesh_cast_hypercube(
-    __isl_take const isl::map mesh_cast_networks,
-    __isl_take const isl::map dist_func
-) { 
-  /**
-   * Makes mesh_cash_networks from data -> [dst -> src] to 
-   * [data -> src] -> dst
-   */
+/**
+ * @brief Gets the extent of each dimension per [data -> src].
+ * @param mesh_cast_networks The map of [data -> src] -> dst.
+ * @param dist_func The map of [data -> src] -> distance.
+ * 
+ * @return A vector of piecewise affines mapping [data -> src] -> extent.
+ */
+std::vector<__isl_give isl::pw_aff> calculate_extents(
+  __isl_take isl::map mesh_cast_networks,
+  __isl_take isl::map dist_func
+) {
+  /// @note Makes mesh_cash_networks from data -> [dst -> src] to [data -> src] -> dst
   isl::map potential_sources = mesh_cast_networks.range_reverse().uncurry();
   // std::cout << "Potential Sources: " << potential_sources << std::endl;
   isl::map sources = potential_sources.domain().unwrap().range_map().as_map();
@@ -647,6 +651,15 @@ isl_pw_qpolynomial *cost_mesh_cast_hypercube(
     }
   );
 
+  return dim_extents;
+}
+
+isl_pw_qpolynomial *cost_mesh_cast_hypercube(
+    __isl_take const isl::map mesh_cast_networks,
+    __isl_take const isl::map dist_func
+) { 
+  auto dim_extents = calculate_extents(mesh_cast_networks, dist_func);
+
   // Tracks the hypercube cost.
   isl::pw_aff hypercube_costs = isl::manage(
     isl_pw_aff_zero_on_domain(
@@ -674,51 +687,6 @@ isl_pw_qpolynomial *cost_mesh_cast_hypercube(
     isl_pw_qpolynomial_from_pw_aff(hypercube_costs.copy())
   ));
 }
-
-
-// isl_pw_qpolynomial *cost_mesh_cast_longest_extent_first(
-//     __isl_take const isl::map mesh_cast_networks,
-//     __isl_take const isl::map dist_func
-// ) { 
-//   /**
-//    * Makes mesh_cash_networks from data -> [dst -> src] to 
-//    * [data -> src] -> dst
-//    */
-//   isl::map potential_sources = mesh_cast_networks.range_reverse().uncurry();
-//   std::cout << "Potential Sources: " << potential_sources << std::endl;
-//   isl::map sources = potential_sources.domain().unwrap().range_map().as_map();
-//   std::cout << "Sources: " << sources << std::endl;
-//   isl::map casting_extents = isl::manage(
-//     isl_map_union(sources.copy(), potential_sources.copy())
-//   );
-//   std::cout << "Casting Extents: " << casting_extents << std::endl;
-//   // Projects away the a dimension from mesh_cast_networks, finds the least expensive source DOR.
-//   unsigned dimensions = potential_sources.range_tuple_dim();
-//   long min_cost = LONG_MAX;
-//   isl_pw_qpolynomial *min_sum = nullptr;
-
-//   // Gets the product of the extents of all the dimensions.
-//   for (int noc_dim = 0; noc_dim < dimensions; noc_dim++) {
-//     isl::map multicast_simplification = casting_extents.project_out_param(
-//       isl::manage(isl_map_get_dim_id(casting_extents.copy(), isl_dim_out, noc_dim))
-//     );
-//     // Finds max(yd) - min(yd) for each [a, b] -> [xs, ys].
-//     isl::pw_aff multicast_max = isl::manage(isl_map_dim_max(multicast_simplification.copy(), 0));
-//     isl::pw_aff multicast_min = isl::manage(isl_map_dim_min(multicast_simplification.copy(), 0));
-
-//     // Subtracts the max from the min to get the range.
-//     isl::pw_aff multi_cast_cost = multicast_max.sub(multicast_min).coalesce();
-//     std::cout << "Multi Cast Cost: " << multi_cast_cost << std::endl;
-
-//     // long extent = multi_cast_cost.eval(isl::point::zero(multi_cast_cost.get_space())).get_num_si();
-//     // std::cout << "Extent: " << extent << std::endl;
-//   }
-
-//   std::cout << "test: " << isl::manage((isl_map_dim_max(isl_map_range_map(potential_sources.copy()), 1)));
-
-
-//   return min_sum;
-// }
 
 
 TransferInfo DistributedMulticastHypercubeModel::Apply(
