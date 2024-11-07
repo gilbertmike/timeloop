@@ -143,13 +143,14 @@ std::vector<analysis::SpaceTime> construct_space_time(const YAML::Node &dims)
 }
 
 
-BOOST_AUTO_TEST_CASE(TestDistributedMulticastExtent_Model)
+BOOST_AUTO_TEST_CASE(TestDistributedMulticastHyperCubeModel)
 {
   using namespace analysis;
 
   std::string TEST_CASES_FILE = "./src/unit-test/multicast/test_cases.yaml";
   YAML::Node test_cases = YAML::LoadFile(TEST_CASES_FILE);
   
+  std::cout << "Running DistributedMulticastHyperCubeModel Test" << std::endl;
   for (auto test : test_cases.as<std::vector<YAML::Node>>()) {
     // Read test case parameters
     int buf_id = 0;
@@ -177,4 +178,5 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticastExtent_Model)
     std::cout << "Returned Value: " << ret << std::endl;
     assert(ret == test["expected"]["multicast_hops"].as<long>());
   }
+  std::cout << "DistributedMulticastHyperCubeModel Test Passed" << std::endl;
 }
