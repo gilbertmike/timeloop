@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticastHyperCubeModel)
     long ret = sum_extract.get_num_si();
     
     std::cout << "Returned Value: " << ret << std::endl;
-    assert(ret == test["expected"]["multicast_hops"].as<long>());
+    BOOST_CHECK(ret == test["expected"]["multicast_hops"].as<long>());
   }
   std::cout << "DistributedMulticastHyperCubeModel Test Passed" << std::endl;
 }

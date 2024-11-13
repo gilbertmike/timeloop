@@ -407,6 +407,12 @@ DistributedMulticastHypercubeModel::DistributedMulticastHypercubeModel(bool coun
 }
 
 
+DistributedMulticastBigExtentFirstModel::DistributedMulticastBigExtentFirstModel(bool count_hops)
+  : count_hops_(count_hops)
+{
+}
+
+
 /******************************************************************************
  * Local function implementations
  *****************************************************************************/
@@ -522,9 +528,10 @@ std::vector<bool> MakeMulticastDimRemoveMask(
   }
   return mask;
 }
-
+////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 // Multicast Model Pit of Temporary Spaghetti
+////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 /// NOTES FOR NON-TREE MULTICAST SCENARIO
 // - Load balancing issues for multiple minimally distant sources.
@@ -572,6 +579,9 @@ __isl_give const isl::map identify_mesh_casts(
   return multicast_networks;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Extent Based Models
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief Gets the extent of each dimension per [data -> src].
  * @param mesh_cast_networks The map of [data -> src] -> dst.
@@ -703,11 +713,6 @@ TransferInfo DistributedMulticastHypercubeModel::Apply(
 {
   (void) buf_id;
 
-  // auto spatial_dim_idxs = GetSpatialTagsIdxs(fill.dim_in_tags, buf_id);
-  // auto n_spatial_dims = spatial_dim_idxs.size();
-  // auto permutation = MakeConnectivityDimPermutation(spatial_dim_idxs, n);
-  // auto p_reorder_map = isl::reorder_projector(GetIslCtx().get(), permutation);
-
   // Defines the distance function string.
   std::string dist_func_str = R"DIST({
     [noc[xd, yd] -> noc[xs, ys]] -> dist[(xd - xs) + (yd - ys)] : 
@@ -737,4 +742,54 @@ TransferInfo DistributedMulticastHypercubeModel::Apply(
   };
 }
 
+
+// isl_pw_qpolynomial *cost_mesh_cast_extent_first(
+//     __isl_take const isl::map mesh_cast_networks,
+//     __isl_take const isl::map dist_func
+// ) {
+//   // Gets the [data -> src] -> extent of each dimension.
+//   auto dim_extents = calculate_extents(mesh_cast_networks, dist_func);
+
+  
+// }
+
+
+TransferInfo DistributedMulticastBigExtentFirstModel::Apply(
+  BufferId buf_id,
+  const Fill& fills,
+  const Occupancy& occupancy
+) const
+{
+  (void) buf_id;
+
+  // Defines the distance function string.
+  std::string dist_func_str = R"DIST({
+    [noc[xd, yd] -> noc[xs, ys]] -> dist[(xd - xs) + (yd - ys)] : 
+      xd >= xs and yd >= ys;
+    [noc[xd, yd] -> noc[xs, ys]] -> dist[-(xd - xs) + -(yd - ys)] : 
+      xd < xs and yd < ys;
+    [noc[xd, yd] -> noc[xs, ys]] -> dist[-(xd - xs) + (yd - ys)] : 
+      xd < xs and yd >= ys;
+    [noc[xd, yd] -> noc[xs, ys]] -> dist[(xd - xs) + -(yd - ys)] : 
+      xd >= xs and yd < ys
+  })DIST";
+  isl::map dist_func(GetIslCtx(), dist_func_str);
+
+  isl::map mcs = identify_mesh_casts(
+    occupancy.map, 
+    fills.map, 
+    dist_func
+  );
+
+  // Calculates the cost of the extent-first model.
+  isl_pw_qpolynomial *res = cost_mesh_cast_extent_first(mcs, dist_func);
+
+  // TODO:: Read once from all buffers, assert that card(mcs) == tensor_size * D
+  return TransferInfo{
+    .fulfilled_fill=Transfers(fills.dim_in_tags, fills.map),
+    .parent_reads=Reads(occupancy.dim_in_tags, mcs),
+    .unfulfilled_fill=Fill(fills.dim_in_tags, fills.map.subtract(fills.map)),
+    .p_hops=res,
+  };
+}
 } // namespace analysis

@@ -140,4 +140,16 @@ class DistributedMulticastHypercubeModel final : public SpatialReuseModel
   bool count_hops_;
 };
 
+
+class DistributedMulticastBigExtentFirstModel final : public SpatialReuseModel
+{
+ public:
+  DistributedMulticastBigExtentFirstModel(bool count_hops);
+
+  TransferInfo
+  Apply(BufferId buf_id, const Fill& fills, const Occupancy& occupancy) const override;
+
+ private:
+  bool count_hops_;
+};
 }; // namespace analysis
