@@ -676,15 +676,9 @@ isl_pw_qpolynomial *cost_mesh_cast_hypercube(
 ) { 
   auto dim_extents = calculate_extents(mesh_cast_networks, dist_func);
 
-  // Tracks the hypercube cost.
-  isl::pw_aff hypercube_costs = isl::manage(
-    isl_pw_aff_zero_on_domain(
-      isl_local_space_from_space(isl_pw_aff_get_domain_space(dim_extents[0].copy()))
-    )
-  );
   // Tracks the amount we are casting from the hypercube.
   isl::val one = isl::manage(isl_val_int_from_si(GetIslCtx().get(), 1));
-  isl::pw_aff casting_volume = isl::manage(
+  isl::pw_aff hypercube_costs = isl::manage(
     isl_pw_aff_zero_on_domain(
       isl_local_space_from_space(isl_pw_aff_get_domain_space(dim_extents[0].copy()))
     )
@@ -692,11 +686,10 @@ isl_pw_qpolynomial *cost_mesh_cast_hypercube(
   // Calculates the cost of the hypercube.
   for (auto& dim_extent : dim_extents) {
     // Adds the dim_extent times the casting volume to the hypercube cost.
-    hypercube_costs = hypercube_costs.add(dim_extent.mul(casting_volume));
-    // Multiplies the dim_extent + 1 by the casting volume.
-    casting_volume = casting_volume.mul(dim_extent.add_constant(one));
+    hypercube_costs = hypercube_costs.mul(dim_extent.add_constant(one));
   }
-  // std::cout << "Hypercube Costs: " << hypercube_costs << std::endl;
+  hypercube_costs = hypercube_costs.add_constant(one.neg()).coalesce();
+  std::cout << "Hypercube Costs: " << hypercube_costs << std::endl;
 
   // returns the hypercube cost as a piecewise polynomial.
   return isl_pw_qpolynomial_sum(isl_pw_qpolynomial_sum(
@@ -743,15 +736,16 @@ TransferInfo DistributedMulticastHypercubeModel::Apply(
 }
 
 
-// isl_pw_qpolynomial *cost_mesh_cast_extent_first(
-//     __isl_take const isl::map mesh_cast_networks,
-//     __isl_take const isl::map dist_func
-// ) {
-//   // Gets the [data -> src] -> extent of each dimension.
-//   auto dim_extents = calculate_extents(mesh_cast_networks, dist_func);
 
-  
-// }
+isl_pw_qpolynomial *cost_mesh_cast_extent_first(
+    __isl_take const isl::map mesh_cast_networks,
+    __isl_take const isl::map dist_func
+) {
+  // Gets the [data -> src] -> extent of each dimension.
+  auto dim_extents = calculate_extents(mesh_cast_networks, dist_func);
+
+  return nullptr;
+}
 
 
 TransferInfo DistributedMulticastBigExtentFirstModel::Apply(
