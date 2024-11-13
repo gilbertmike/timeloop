@@ -605,7 +605,6 @@ std::vector<__isl_give isl::pw_aff> calculate_extents(
   /// @brief Projects away all dimensions but one to find their extent for hypercube.
   unsigned dimensions = potential_sources.range_tuple_dim();
   long min_cost = LONG_MAX;
-  isl_pw_qpolynomial *min_sum = nullptr;
   // Creates a mask of what to project out.
   std::vector<bool> project_out = std::vector<bool>(dimensions, true);
   std::vector<isl::pw_aff> dim_extents = std::vector<isl::pw_aff>(dimensions);
@@ -633,32 +632,32 @@ std::vector<__isl_give isl::pw_aff> calculate_extents(
   // std::cout << "]" << std::endl;
 
   // Sorts the extents in reverse order.
-  std::sort(dim_extents.begin(), dim_extents.end(),
-    // Lambda function that returns the sum of the extents per [data -> src]
-    [](const isl::pw_aff &a, const isl::pw_aff &b) -> bool
-    {
-      // Calculates the sum of the extents for each [data -> src].
-      isl_pw_qpolynomial *a_total = isl_pw_qpolynomial_sum(isl_pw_qpolynomial_from_pw_aff(a.copy()));
-      isl_pw_qpolynomial *b_total = isl_pw_qpolynomial_sum(isl_pw_qpolynomial_from_pw_aff(b.copy()));
+  // std::sort(dim_extents.begin(), dim_extents.end(),
+  //   // Lambda function that returns the sum of the extents per [data -> src]
+  //   [](const isl::pw_aff &a, const isl::pw_aff &b) -> bool
+  //   {
+  //     // Calculates the sum of the extents for each [data -> src].
+  //     isl_pw_qpolynomial *a_total = isl_pw_qpolynomial_sum(isl_pw_qpolynomial_from_pw_aff(a.copy()));
+  //     isl_pw_qpolynomial *b_total = isl_pw_qpolynomial_sum(isl_pw_qpolynomial_from_pw_aff(b.copy()));
 
-      // Gets the constant value of the sum.
-      long a_val = isl::manage(
-        isl_pw_qpolynomial_eval(a_total, 
-          isl_point_zero(
-            isl_pw_qpolynomial_get_domain_space(a_total)
-          )
-        )
-      ).get_num_si();
-      long b_val = isl::manage(
-        isl_pw_qpolynomial_eval(b_total, 
-          isl_point_zero(
-            isl_pw_qpolynomial_get_domain_space(b_total)
-          )
-        )
-      ).get_num_si();
-      return a_val > b_val;
-    }
-  );
+  //     // Gets the constant value of the sum.
+  //     long a_val = isl::manage(
+  //       isl_pw_qpolynomial_eval(a_total, 
+  //         isl_point_zero(
+  //           isl_pw_qpolynomial_get_domain_space(a_total)
+  //         )
+  //       )
+  //     ).get_num_si();
+  //     long b_val = isl::manage(
+  //       isl_pw_qpolynomial_eval(b_total, 
+  //         isl_point_zero(
+  //           isl_pw_qpolynomial_get_domain_space(b_total)
+  //         )
+  //       )
+  //     ).get_num_si();
+  //     return a_val > b_val;
+  //   }
+  // );
 
   return dim_extents;
 }
