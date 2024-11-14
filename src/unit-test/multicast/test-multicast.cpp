@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticastHyperCubeModel)
     );
     isl::map dist_func = isl::map(GetIslCtx(), test["dist_func"].as<std::string>());
     // Apply the model
-    auto multicast_model = DistributedMulticastHypercubeModel(true);
+    auto multicast_model = DistributedMulticastHypercubeModel(true, dist_func);
     TransferInfo info = multicast_model.Apply(buf_id, fill, occ);
     // Check the results
     isl::val sum_extract = isl::manage(isl_pw_qpolynomial_eval(

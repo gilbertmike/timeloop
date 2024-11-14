@@ -401,8 +401,9 @@ SimpleMulticastModel::Apply(
 }
 
 
-DistributedMulticastHypercubeModel::DistributedMulticastHypercubeModel(bool count_hops)
-  : count_hops_(count_hops)
+DistributedMulticastHypercubeModel::DistributedMulticastHypercubeModel(
+  bool count_hops, isl::map dist_func
+): count_hops_(count_hops), dist_func_(dist_func)
 {
 }
 
@@ -593,15 +594,14 @@ std::vector<__isl_give isl::pw_aff> calculate_extents(
   __isl_take isl::map mesh_cast_networks,
   __isl_take isl::map dist_func
 ) {
-  /// @note Makes mesh_cash_networks from data -> [dst -> src] to [data -> src] -> dst
+  /// @brief Makes mesh_cash_networks from data -> [dst -> src] to [data -> src] -> dst
   isl::map potential_sources = mesh_cast_networks.range_reverse().uncurry();
-  // std::cout << "Potential Sources: " << potential_sources << std::endl;
+  /// @note Sources are part of the extents, so we union it with the destinations.
   isl::map sources = potential_sources.domain().unwrap().range_map().as_map();
-  // std::cout << "Sources: " << sources << std::endl;
   isl::map casting_extents = isl::manage(
     isl_map_union(sources.copy(), potential_sources.copy())
   );
-  // std::cout << "Casting Extents: " << casting_extents << std::endl;
+
   /// @brief Projects away all dimensions but one to find their extent for hypercube.
   unsigned dimensions = potential_sources.range_tuple_dim();
   long min_cost = LONG_MAX;
@@ -609,7 +609,7 @@ std::vector<__isl_give isl::pw_aff> calculate_extents(
   std::vector<bool> project_out = std::vector<bool>(dimensions, true);
   std::vector<isl::pw_aff> dim_extents = std::vector<isl::pw_aff>(dimensions);
 
-  // Gets the product of the extents of all the dimensions.
+  /// @brief Gets the extents of all the dimensions.
   for (unsigned noc_dim = 0; noc_dim < dimensions; noc_dim++) {
     /// @brief Projects out all the dimensions of the output besides noc_dim.
     project_out[noc_dim] = false;
@@ -618,7 +618,6 @@ std::vector<__isl_give isl::pw_aff> calculate_extents(
     )).reverse();
     isl::map dim_extent_space = casting_extents.apply_range(extent_mapper);
     project_out[noc_dim] = true;
-    // std::cout << "Dim Extent Space: " << dim_extent_space << std::endl;
 
     // Finds max(noc_dim) - min(noc_dim) for each [dara -> src]
     isl::pw_aff max_extent = isl::manage(isl_map_dim_max(dim_extent_space.copy(), 0));
@@ -627,37 +626,6 @@ std::vector<__isl_give isl::pw_aff> calculate_extents(
     // Subtracts the max from the min to get the extent per [data -> src]
     dim_extents[noc_dim] = max_extent.sub(min_extent).coalesce();
   }
-  // std::cout << "Extents: [";
-  // for (auto const& e : dim_extents) std::cout << e << ", ";
-  // std::cout << "]" << std::endl;
-
-  // Sorts the extents in reverse order.
-  // std::sort(dim_extents.begin(), dim_extents.end(),
-  //   // Lambda function that returns the sum of the extents per [data -> src]
-  //   [](const isl::pw_aff &a, const isl::pw_aff &b) -> bool
-  //   {
-  //     // Calculates the sum of the extents for each [data -> src].
-  //     isl_pw_qpolynomial *a_total = isl_pw_qpolynomial_sum(isl_pw_qpolynomial_from_pw_aff(a.copy()));
-  //     isl_pw_qpolynomial *b_total = isl_pw_qpolynomial_sum(isl_pw_qpolynomial_from_pw_aff(b.copy()));
-
-  //     // Gets the constant value of the sum.
-  //     long a_val = isl::manage(
-  //       isl_pw_qpolynomial_eval(a_total, 
-  //         isl_point_zero(
-  //           isl_pw_qpolynomial_get_domain_space(a_total)
-  //         )
-  //       )
-  //     ).get_num_si();
-  //     long b_val = isl::manage(
-  //       isl_pw_qpolynomial_eval(b_total, 
-  //         isl_point_zero(
-  //           isl_pw_qpolynomial_get_domain_space(b_total)
-  //         )
-  //       )
-  //     ).get_num_si();
-  //     return a_val > b_val;
-  //   }
-  // );
 
   return dim_extents;
 }
@@ -675,20 +643,25 @@ isl_pw_qpolynomial *cost_mesh_cast_hypercube(
 ) { 
   auto dim_extents = calculate_extents(mesh_cast_networks, dist_func);
 
-  // Tracks the amount we are casting from the hypercube.
+  // Tracks the total cost of the hypercube cast per src -> data.
   isl::val one = isl::manage(isl_val_int_from_si(GetIslCtx().get(), 1));
   isl::pw_aff hypercube_costs = isl::manage(
     isl_pw_aff_zero_on_domain(
       isl_local_space_from_space(isl_pw_aff_get_domain_space(dim_extents[0].copy()))
     )
   ).add_constant(one);
-  // Calculates the cost of the hypercube.
+  // 
+  /**
+   * @brief Calculates the cost of the hypercube.
+   * @note Hypercube cost = 
+   *       = \sum_{i=0}^{D} ((extent_i - 1) * \prod_{j=0}^{i-1} extent_j)
+   *       = \prod_{i=0}^{D} extent_i
+   */
   for (auto& dim_extent : dim_extents) {
     // Adds the dim_extent times the casting volume to the hypercube cost.
     hypercube_costs = hypercube_costs.mul(dim_extent.add_constant(one));
   }
   hypercube_costs = hypercube_costs.add_constant(one.neg()).coalesce();
-  std::cout << "Hypercube Costs: " << hypercube_costs << std::endl;
 
   // returns the hypercube cost as a piecewise polynomial.
   return isl_pw_qpolynomial_sum(isl_pw_qpolynomial_sum(
@@ -705,25 +678,12 @@ TransferInfo DistributedMulticastHypercubeModel::Apply(
 {
   (void) buf_id;
 
-  // Defines the distance function string.
-  std::string dist_func_str = R"DIST({
-    [noc[xd, yd] -> noc[xs, ys]] -> dist[(xd - xs) + (yd - ys)] : 
-      xd >= xs and yd >= ys;
-    [noc[xd, yd] -> noc[xs, ys]] -> dist[-(xd - xs) + -(yd - ys)] : 
-      xd < xs and yd < ys;
-    [noc[xd, yd] -> noc[xs, ys]] -> dist[-(xd - xs) + (yd - ys)] : 
-      xd < xs and yd >= ys;
-    [noc[xd, yd] -> noc[xs, ys]] -> dist[(xd - xs) + -(yd - ys)] : 
-      xd >= xs and yd < ys
-  })DIST";
-  isl::map dist_func(GetIslCtx(), dist_func_str);
-
   isl::map mcs = identify_mesh_casts(
-    occupancy.map, 
-    fills.map, 
-    dist_func
+    occupancy.map, fills.map, this->dist_func_
   );
-  isl_pw_qpolynomial *res = cost_mesh_cast_hypercube(mcs, dist_func);
+  isl_pw_qpolynomial *res = cost_mesh_cast_hypercube(
+    mcs, this->dist_func_
+  );
 
   // TODO:: Read once from all buffers, assert that card(mcs) == tensor_size * D
   return TransferInfo{

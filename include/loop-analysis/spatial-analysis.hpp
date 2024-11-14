@@ -131,13 +131,14 @@ class SimpleMulticastModel final : public SpatialReuseModel
 class DistributedMulticastHypercubeModel final : public SpatialReuseModel
 {
  public:
-  DistributedMulticastHypercubeModel(bool count_hops);
+  DistributedMulticastHypercubeModel(bool count_hops, isl::map dist_func);
 
   TransferInfo
   Apply(BufferId buf_id, const Fill& fills, const Occupancy& occupancy) const override;
 
  private:
   bool count_hops_;
+  isl::map dist_func_;
 };
 
 

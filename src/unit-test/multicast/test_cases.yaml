@@ -9,13 +9,13 @@
             target: 0
     dist_func: &2d_manhattan_dist | 
         {
-            [[xd, yd] -> [xs, ys]] -> [(xd - xs) + (yd - ys)] : 
+            [noc[xd, yd] -> noc[xs, ys]] -> hops[(xd - xs) + (yd - ys)] : 
                 xd >= xs and yd >= ys;
-            [[xd, yd] -> [xs, ys]] -> [-(xd - xs) + -(yd - ys)] : 
+            [noc[xd, yd] -> noc[xs, ys]] -> hops[-(xd - xs) + -(yd - ys)] : 
                 xd < xs and yd < ys;
-            [[xd, yd] -> [xs, ys]] -> [-(xd - xs) + (yd - ys)] : 
+            [noc[xd, yd] -> noc[xs, ys]] -> hops[-(xd - xs) + (yd - ys)] : 
                 xd < xs and yd >= ys;
-            [[xd, yd] -> [xs, ys]] -> [(xd - xs) + -(yd - ys)] : 
+            [noc[xd, yd] -> noc[xs, ys]] -> hops[(xd - xs) + -(yd - ys)] : 
                 xd >= xs and yd < ys
         }
     expected: &equivalent_class_1
