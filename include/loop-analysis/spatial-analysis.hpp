@@ -142,15 +142,16 @@ class DistributedMulticastHypercubeModel final : public SpatialReuseModel
 };
 
 
-class DistributedMulticastBigExtentFirstModel final : public SpatialReuseModel
+class DistributedMulticastOrderedExtentsDORModel final : public SpatialReuseModel
 {
  public:
-  DistributedMulticastBigExtentFirstModel(bool count_hops);
+  DistributedMulticastOrderedExtentsDORModel(bool count_hops, isl::map dist_func);
 
   TransferInfo
   Apply(BufferId buf_id, const Fill& fills, const Occupancy& occupancy) const override;
 
  private:
   bool count_hops_;
+  isl::map dist_func_;
 };
 }; // namespace analysis

@@ -176,7 +176,44 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticastHyperCubeModel)
     long ret = sum_extract.get_num_si();
     
     std::cout << "Returned Value: " << ret << std::endl;
-    BOOST_CHECK(ret == test["expected"]["multicast_hops"].as<long>());
+    BOOST_CHECK(ret == test["expected"]["hypercube_hops"].as<long>());
   }
   std::cout << "DistributedMulticastHyperCubeModel Test Passed" << std::endl;
+}
+
+BOOST_AUTO_TEST_CASE(TestDistributedMulticastOrderedExtentsDORModel)
+{
+  using namespace analysis;
+
+  std::string TEST_CASES_FILE = "./src/unit-test/multicast/test_cases.yaml";
+  YAML::Node test_cases = YAML::LoadFile(TEST_CASES_FILE);
+  
+  std::cout << "Running DistributedMulticastOrderedExtentsDORModel Test" << std::endl;
+  for (auto test : test_cases.as<std::vector<YAML::Node>>()) {
+    // Read test case parameters
+    int buf_id = 0;
+    auto dims = construct_space_time(test["dims"]);
+    Fill fill = Fill(
+      dims,
+      isl::map(GetIslCtx(), test["fill"].as<std::string>())
+    );
+    Occupancy occ = Occupancy(
+      dims,
+      isl::map(GetIslCtx(), test["occ"].as<std::string>())
+    );
+    // Apply the model
+    auto multicast_model = DistributedMulticastOrderedExtentsDORModel(
+      true, isl::map(GetIslCtx(), test["dist_func"].as<std::string>())
+    );
+    TransferInfo info = multicast_model.Apply(buf_id, fill, occ);
+    // Check the results
+    isl::val sum_extract = isl::manage(isl_pw_qpolynomial_eval(
+      info.p_hops, isl_point_zero(isl_pw_qpolynomial_get_domain_space(info.p_hops))
+    ));
+    long ret = sum_extract.get_num_si();
+    
+    std::cout << "Returned Value: " << ret << std::endl;
+    BOOST_CHECK(ret == test["expected"]["extent_DOR_hops"].as<long>());
+  }
+  std::cout << "DistributedMulticastOrderedExtentsDORModel Test Passed" << std::endl;
 }

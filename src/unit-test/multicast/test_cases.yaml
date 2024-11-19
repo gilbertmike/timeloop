@@ -44,6 +44,89 @@
     dims: *2d_spatial
     dist_func: *2d_manhattan_dist
     expected: *equivalent_class_2
+# Edge to Src
+-   occ: |
+        {
+            noc[tm, tn, xs, ys] -> A[m, k] : 
+                0 <= tm < 8 and 0 <= tn < 8 and 
+                xs=0 and ys=0 and 
+                0 <= m < 64 and 0 <= k < 64
+        }
+    fill: |
+        {
+            noc[tm, tn, xd, yd] -> A[m, k] : 
+                0 <= tm < 8 and 0 <= tn < 8 and tn = 0 and 
+                0 <= xs < 8 and 0 <= ys < 8 and 
+                m=(8 * tm) + xs and k=tk
+        }"
+    dims: &2d_temporal_2d_spatial
+        - type: Temporal
+        - type: Temporal
+        - type: Spatial
+          spatial_dim: 0
+          target: 0
+        - type: Spatial
+          spatial_dim: 1
+          target: 0
+    dist_func: &2d_temporal_2d_manhattan_dist | 
+        {
+            [noc[tm, tn, xd, yd] -> noc[tm, tn, xs, ys]] -> hops[(xd - xs) + (yd - ys)] : 
+                xd >= xs and yd >= ys;
+            [noc[tm, tn, xd, yd] -> noc[tm, tn, xs, ys]] -> hops[-(xd - xs) + -(yd - ys)] : 
+                xd < xs and yd < ys;
+            [noc[tm, tn, xd, yd] -> noc[tm, tn, xs, ys]] -> hops[-(xd - xs) + (yd - ys)] : 
+                xd < xs and yd >= ys;
+            [noc[tm, tn, xd, yd] -> noc[tm, tn, xs, ys]] -> hops[(xd - xs) + -(yd - ys)] : 
+                xd >= xs and yd < ys
+        }
+    expected: &equivalent_class_3
+        latency: null
+        total_hops: null
+        multicast_hops: null
+        hypercube_hops: null
+        extent_DOR_hops: null
+# Src to Dst
+-   occ: |
+        {
+            noc[tm, tn, tk, xs, ys] -> A[m, k] : 
+                0 <= tm < 8 and 0 <= tn < 8 and 0 <= tk < 64 and 
+                0 <= xs < 8 and 0 <= ys < 8  and 
+                m= (8 * tm) + xs and 0 <= k < 64
+        }
+    fill: |
+        {
+            noc[tm, tn, tk, xd, yd] -> A[m, k] : 
+                0 <= tm < 8 and 0 <= tn < 8 and 0 <= tk < 64 and 
+                0 <= xs < 8 and 0 <= ys < 8 and
+                m= (8 * tm) + xs and k=tk
+        }
+    dims: &2d_spatial
+        - type: Temporal
+        - type: Temporal
+        - type: Temporal
+        - type: Spatial
+          spatial_dim: 0
+          target: 0
+        - type: Spatial
+          spatial_dim: 1
+          target: 0
+    dist_func: &2d_manhattan_dist | 
+        {
+            [noc[tm, tn, tk, xd, yd] -> noc[tm, tn, tk, xs, ys]] -> hops[(xd - xs) + (yd - ys)] : 
+                xd >= xs and yd >= ys;
+            [noc[tm, tn, tk, xd, yd] -> noc[tm, tn, tk, xs, ys]] -> hops[-(xd - xs) + -(yd - ys)] : 
+                xd < xs and yd < ys;
+            [noc[tm, tn, tk, xd, yd] -> noc[tm, tn, tk, xs, ys]] -> hops[-(xd - xs) + (yd - ys)] : 
+                xd < xs and yd >= ys;
+            [noc[tm, tn, tk, xd, yd] -> noc[tm, tn, tk, xs, ys]] -> hops[(xd - xs) + -(yd - ys)] : 
+                xd >= xs and yd < ys
+        }
+    expected: &equivalent_class_4
+        latency: null
+        total_hops: null
+        multicast_hops: null
+        hypercube_hops: null
+        extent_DOR_hops: null
 # -   occ: "{ noc[xs, ys] -> data[d0, d1] : 0 <= d0 < 8 and 0 <= d1 < 8 and (xs=0 or 3<=xs<=4 or xs=7) and (ys=0 or 3<=ys<=4 or ys=7) }"
 #     fill: "{ noc[xd, yd] -> data[d0, d1] : d0 = xd and d1 = yd and 0 <= xd < 8 and 0 <= yd < 8 }"
 #     dims: *2d_spatial

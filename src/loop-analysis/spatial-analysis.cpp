@@ -408,8 +408,9 @@ DistributedMulticastHypercubeModel::DistributedMulticastHypercubeModel(
 }
 
 
-DistributedMulticastBigExtentFirstModel::DistributedMulticastBigExtentFirstModel(bool count_hops)
-  : count_hops_(count_hops)
+DistributedMulticastOrderedExtentsDORModel::DistributedMulticastOrderedExtentsDORModel(
+  bool count_hops, isl::map dist_func
+): count_hops_(count_hops), dist_func_(dist_func)
 {
 }
 
@@ -701,13 +702,50 @@ isl_pw_qpolynomial *cost_mesh_cast_extent_first(
     __isl_take const isl::map dist_func
 ) {
   // Gets the [data -> src] -> extent of each dimension.
-  auto dim_extents = calculate_extents(mesh_cast_networks, dist_func);
+  const std::vector<isl::pw_aff> dim_extents = calculate_extents(
+    mesh_cast_networks, dist_func
+  );
+  /// @brief Argsorts the dimensions by their extents.
+  std::vector<size_t> sorted_dims = std::vector<size_t>(dim_extents.size());
+  std::iota(sorted_dims.begin(), sorted_dims.end(), 0);
+  std::sort(sorted_dims.begin(), sorted_dims.end(),
+    ///@brief Lambda function that reverse argsorts by total extent.
+    [&dim_extents](size_t a, size_t b) -> bool
+    {
+      // Calculates the sum of the extents for each [data -> src].
+      isl_pw_qpolynomial *a_total = isl_pw_qpolynomial_sum(
+        isl_pw_qpolynomial_from_pw_aff(dim_extents[a].copy())
+      );
+      isl_pw_qpolynomial *b_total = isl_pw_qpolynomial_sum(
+        isl_pw_qpolynomial_from_pw_aff(dim_extents[b].copy())
+      );
+      // Gets the constant value of the sum.
+      long a_val = isl::manage(
+        isl_pw_qpolynomial_eval(a_total, 
+          isl_point_zero(
+            isl_pw_qpolynomial_get_domain_space(a_total)
+          )
+        )
+      ).get_num_si();
+      long b_val = isl::manage(
+        isl_pw_qpolynomial_eval(b_total, 
+          isl_point_zero(
+            isl_pw_qpolynomial_get_domain_space(b_total)
+          )
+        )
+      ).get_num_si();
+      return a_val > b_val;
+    }
+  );
 
+  // Casts in descending order of extents.
+  isl::val one = isl::manage(isl_val_int_from_si(GetIslCtx().get(), 1));
+  
   return nullptr;
 }
 
 
-TransferInfo DistributedMulticastBigExtentFirstModel::Apply(
+TransferInfo DistributedMulticastOrderedExtentsDORModel::Apply(
   BufferId buf_id,
   const Fill& fills,
   const Occupancy& occupancy
@@ -716,26 +754,14 @@ TransferInfo DistributedMulticastBigExtentFirstModel::Apply(
   (void) buf_id;
 
   // Defines the distance function string.
-  std::string dist_func_str = R"DIST({
-    [noc[xd, yd] -> noc[xs, ys]] -> dist[(xd - xs) + (yd - ys)] : 
-      xd >= xs and yd >= ys;
-    [noc[xd, yd] -> noc[xs, ys]] -> dist[-(xd - xs) + -(yd - ys)] : 
-      xd < xs and yd < ys;
-    [noc[xd, yd] -> noc[xs, ys]] -> dist[-(xd - xs) + (yd - ys)] : 
-      xd < xs and yd >= ys;
-    [noc[xd, yd] -> noc[xs, ys]] -> dist[(xd - xs) + -(yd - ys)] : 
-      xd >= xs and yd < ys
-  })DIST";
-  isl::map dist_func(GetIslCtx(), dist_func_str);
-
   isl::map mcs = identify_mesh_casts(
     occupancy.map, 
     fills.map, 
-    dist_func
+    this->dist_func_
   );
 
   // Calculates the cost of the extent-first model.
-  isl_pw_qpolynomial *res = cost_mesh_cast_extent_first(mcs, dist_func);
+  isl_pw_qpolynomial *res = cost_mesh_cast_extent_first(mcs, this->dist_func_);
 
   // TODO:: Read once from all buffers, assert that card(mcs) == tensor_size * D
   return TransferInfo{
