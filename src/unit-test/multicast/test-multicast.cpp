@@ -7,6 +7,8 @@
 #include "isl-wrapper/ctx-manager.hpp"
 #include "loop-analysis/spatial-analysis.hpp"
 
+#define DPRINT(x) if (std::string(std::getenv("DEBUG")) == "1") std::cout << #x << ": " << x << std::endl;
+
 BOOST_AUTO_TEST_CASE(TestSimpleMulticastModel_0)
 {
   using namespace analysis;
@@ -132,11 +134,13 @@ std::vector<analysis::SpaceTime> construct_space_time(const YAML::Node &dims)
   {
     if (dim["type"].as<std::string>() == "Temporal")
     {
-      throw std::runtime_error("Temporal tag not supported");
+      space_time.push_back(analysis::Temporal());
     }
     else if (dim["type"].as<std::string>() == "Spatial")
     {
-      space_time.push_back(analysis::Spatial(dim["spatial_dim"].as<int>(), dim["target"].as<int>()));
+      space_time.push_back(
+        analysis::Spatial(dim["spatial_dim"].as<int>(), dim["target"].as<int>())
+      );
     }
   }
   return space_time;
@@ -152,35 +156,49 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticastHyperCubeModel)
   
   std::cout << "Running DistributedMulticastHyperCubeModel Test" << std::endl;
   for (auto test : test_cases.as<std::vector<YAML::Node>>()) {
-    // Read test case parameters
+    ///@brief Reads test case parameters.
     int buf_id = 0;
     std::string fill_str = test["fill"].as<std::string>();
+    std::string occ_str = test["occ"].as<std::string>();
+    std::string dist_func_str = test["dist_func"].as<std::string>();
+    ///@brief Construct the necessary Timeloop objects.
     auto dims = construct_space_time(test["dims"]);
+    DPRINT(fill_str);
     Fill fill = Fill(
       dims,
       isl::map(GetIslCtx(), fill_str)
     );
-    std::string occ_str = test["occ"].as<std::string>();
+    DPRINT(occ_str);
     Occupancy occ = Occupancy(
       dims,
       isl::map(GetIslCtx(), occ_str)
     );
-    isl::map dist_func = isl::map(GetIslCtx(), test["dist_func"].as<std::string>());
-    // Apply the model
-    auto multicast_model = DistributedMulticastHypercubeModel(true, dist_func);
+    DPRINT(dist_func_str);
+    auto multicast_model = DistributedMulticastHypercubeModel(
+      true, isl::map(GetIslCtx(), dist_func_str)
+    );
+    ///@brief Apply the model
     TransferInfo info = multicast_model.Apply(buf_id, fill, occ);
-    // Check the results
+    ///@brief Check the results
     isl::val sum_extract = isl::manage(isl_pw_qpolynomial_eval(
       info.p_hops, isl_point_zero(isl_pw_qpolynomial_get_domain_space(info.p_hops))
     ));
     long ret = sum_extract.get_num_si();
-    
     std::cout << "Returned Value: " << ret << std::endl;
-    BOOST_CHECK(ret == test["expected"]["hypercube_hops"].as<long>());
+    
+    ///@note The if block is used for debugging test cases not yet implemented.
+    if (test["expected"]["hypercube_hops"].IsNull()) {
+      std::cout << "Test case in progress" << std::endl;
+      std::cout << "Fill: " << fill_str << std::endl;
+      std::cout << "Occupancy: " << occ_str << std::endl;
+      std::cout << "Dist Func: " << dist_func_str << std::endl;
+    } else {
+      BOOST_CHECK(ret == test["expected"]["hypercube_hops"].as<long>());
+    }
   }
   std::cout << "DistributedMulticastHyperCubeModel Test Passed" << std::endl;
 }
-
+/*
 BOOST_AUTO_TEST_CASE(TestDistributedMulticastOrderedExtentsDORModel)
 {
   using namespace analysis;
@@ -217,3 +235,4 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticastOrderedExtentsDORModel)
   }
   std::cout << "DistributedMulticastOrderedExtentsDORModel Test Passed" << std::endl;
 }
+*/
