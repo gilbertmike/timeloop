@@ -187,7 +187,6 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticastHyperCubeModel)
       info.p_hops, isl_point_zero(isl_pw_qpolynomial_get_domain_space(info.p_hops))
     ));
     long ret = sum_extract.get_num_si();
-    std::cout << "Returned Value: " << ret << std::endl;
     
     ///@note The if block is used for debugging test cases not yet implemented.
     if (test["expected"]["hypercube_hops"].IsNull()) {
@@ -195,6 +194,7 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticastHyperCubeModel)
       std::cout << "Fill: " << fill_str << std::endl;
       std::cout << "Occupancy: " << occ_str << std::endl;
       std::cout << "Dist Func: " << dist_func_str << std::endl;
+      std::cout << "Returned Value: " << ret << std::endl;
     } else {
       BOOST_CHECK(ret == test["expected"]["hypercube_hops"].as<long>());
     }
@@ -272,10 +272,8 @@ BOOST_AUTO_TEST_CASE(CollectDataMulticastHyperCubeModel)
         m = (8 * tm) + xd and 0 <= k < 64 and 
         0 = ((yd - k) * )FILL" + D + ") % 8}"
     );
-    std::cout << "Fill Buffers: " << fill_buffers_str << std::endl;
     ///@brief Construct the necessary Timeloop objects.
     Fill fill_buffers = Fill(g2b_dims, isl::map(GetIslCtx(), fill_buffers_str));
-    std::cout << "Fill Buffers: " << fill_buffers.map << std::endl;
     std::string occ_buffers_str = std::string(R"OCC({
       noc[tm, tn, tk, xs, ys] -> A[m, k] : 
         0 <= tm < 8 and 0 <= tn < 8 and 0 <= tk < 64 and 

@@ -645,11 +645,10 @@ isl_pw_qpolynomial *cost_mesh_cast_hypercube(
   auto dim_extents = calculate_extents(mesh_cast_networks, dist_func);
 
   // Tracks the total cost of the hypercube cast per src -> data.
-  isl::pw_aff one = isl::manage(
-    isl_pw_aff_zero_on_domain(
-      isl_local_space_from_space(isl_pw_aff_get_domain_space(dim_extents[0].copy()))
-    )
-  ).add_constant(isl::manage(isl_val_int_from_si(GetIslCtx().get(), 1)));
+  isl::pw_aff one = isl::manage(isl_pw_aff_val_on_domain(
+    isl_pw_aff_domain(dim_extents[0].copy()),
+    isl_val_int_from_si(GetIslCtx().get(), 1)
+  ));
   isl_pw_qpolynomial *hypercube_costs = isl_pw_qpolynomial_from_pw_aff(one.copy());
   // 
   /**
@@ -663,17 +662,13 @@ isl_pw_qpolynomial *cost_mesh_cast_hypercube(
     auto dim_plus = isl_pw_qpolynomial_from_pw_aff(
       dim_extent.add(one).coalesce().release()
     );
-    std::cout << "Dim Plus: " << isl_pw_qpolynomial_to_str(dim_plus) << std::endl;
     hypercube_costs = isl_pw_qpolynomial_coalesce(
       isl_pw_qpolynomial_mul(hypercube_costs, dim_plus)
     );
-    std::cout << "Hypercube Costs: " << isl_pw_qpolynomial_to_str(hypercube_costs) << std::endl;
   }
-  hypercube_costs = isl_pw_qpolynomial_sub(
+  hypercube_costs = isl_pw_qpolynomial_coalesce(isl_pw_qpolynomial_sub(
     hypercube_costs, isl_pw_qpolynomial_from_pw_aff(one.release())
-  );
-  std::cout << "Hypercube Costs: " << isl_pw_qpolynomial_to_str(hypercube_costs) << std::endl;
-  std::cout << "Hypercube Costs: " << isl_pw_qpolynomial_to_str(isl_pw_qpolynomial_sum(isl_pw_qpolynomial_copy(hypercube_costs))) << std::endl;
+  ));
 
   // returns the hypercube cost as a piecewise polynomial.
   return isl_pw_qpolynomial_sum(isl_pw_qpolynomial_sum(hypercube_costs));
@@ -687,13 +682,10 @@ TransferInfo DistributedMulticastHypercubeModel::Apply(
 ) const
 {
   (void) buf_id;
-  std::cout << "Occupancy: " << occupancy.map << std::endl;
-  std::cout << "Fills: " << fills.map << std::endl;
 
   isl::map mcs = identify_mesh_casts(
     occupancy.map, fills.map, this->dist_func_
   );
-  std::cout << "Mesh Casts: " << mcs << std::endl;
   isl_pw_qpolynomial *res = cost_mesh_cast_hypercube(
     mcs, this->dist_func_
   );
