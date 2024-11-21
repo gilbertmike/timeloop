@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE(CollectDataMulticastHyperCubeModel)
       0 <= tm < 8 and 0 <= tn < 8 and tn = 0 and 
       0 <= xd < 8 and 0 <= yd < 8 and 
       m = (8 * tm) + xd and 0 <= k < 64 and
-      yd * {0} == (k * {0}) % 8
+      yd * {D} == (k * {D}) % 8
   })FILL";
   std::string occ_global_str = R"OCC({
     noc[tm, tn, xs, ys] -> A[m, k] : 
@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE(CollectDataMulticastHyperCubeModel)
       0 <= tm < 8 and 0 <= tn < 8 and 0 <= tk < 64 and 
       0 <= xs < 8 and 0 <= ys < 8  and 
       m= (8 * tm) + xs and 0 <= k < 64 and
-      yd * {0} == (k * {0}) % 8
+      yd * {D} == (k * {D}) % 8
   })OCC";
   std::string dist_b2p_str = R"DIST({
     [noc[tm, tn, tk, xd, yd] -> noc[tm, tn, tk, xs, ys]] -> hops[(xd - xs) + (yd - ys)] : 
