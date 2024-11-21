@@ -8,7 +8,9 @@
 #include "isl-wrapper/ctx-manager.hpp"
 #include "loop-analysis/spatial-analysis.hpp"
 
-#define DPRINT(x) if (std::string(std::getenv("DEBUG")) == "1") std::cout << #x << ": " << x << std::endl;
+#define DPRINT(x) if (\
+  std::getenv("DEBUG") != NULL && std::stoi(std::getenv("DEBUG"))\
+) std::cout << #x << ": " << x << std::endl;
 
 BOOST_AUTO_TEST_CASE(TestSimpleMulticastModel_0)
 {
@@ -264,26 +266,24 @@ BOOST_AUTO_TEST_CASE(CollectDataMulticastHyperCubeModel)
     ///@brief Constructs the 
     int buf_id = 0;
     std::string fill_buffers_str = std::string(R"FILL({
-        noc[tm, tn, xd, yd] -> A[m, k] : 
+      noc[tm, tn, xd, yd] -> A[m, k] : 
         0 <= tm < 8 and 0 <= tn < 8 and tn = 0 and 
         0 <= xd < 8 and 0 <= yd < 8 and 
         m = (8 * tm) + xd and 0 <= k < 64 and 
-        )FILL") + "(yd * "+D+") % 8 = (k * "+D+") % 8}";
-    ///@brief Construct the necessary Timeloop objects.
-    Fill fill_buffers = Fill(
-      g2b_dims,
-      isl::map(GetIslCtx(), fill_buffers_str)
+        0 = ((yd - k) * )FILL" + D + ") % 8}"
     );
-    Occupancy occ_buffers = Occupancy(
-      b2p_dims,
-      isl::map(GetIslCtx(), std::string(R"OCC({
+    std::cout << "Fill Buffers: " << fill_buffers_str << std::endl;
+    ///@brief Construct the necessary Timeloop objects.
+    Fill fill_buffers = Fill(g2b_dims, isl::map(GetIslCtx(), fill_buffers_str));
+    std::cout << "Fill Buffers: " << fill_buffers.map << std::endl;
+    std::string occ_buffers_str = std::string(R"OCC({
       noc[tm, tn, tk, xs, ys] -> A[m, k] : 
         0 <= tm < 8 and 0 <= tn < 8 and 0 <= tk < 64 and 
         0 <= xs < 8 and 0 <= ys < 8 and 
         m= (8 * tm) + xs and 0 <= k < 64 and 
-        )OCC") + "(ys * "+D+") % 8 = (k * "+D+") % 8}"
-      )
+        0 = ((ys - k) * )OCC" + D + ") % 8}"
     );
+    Occupancy occ_buffers = Occupancy(b2p_dims, isl::map(GetIslCtx(), occ_buffers_str));
     ///@brief Apply the models.
     TransferInfo g2p_info = g2b_model.Apply(buf_id, fill_buffers, occ_global_obj);
     TransferInfo b2p_info = b2p_model.Apply(buf_id, fill_pes_obj, occ_buffers);
