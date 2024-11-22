@@ -550,6 +550,7 @@ __isl_give const isl::map identify_mesh_casts(
     isl_space_copy(wrapped_dst_fill.get_space().map_from_set().get())
   ));
   wrapped_fill_identity = wrapped_fill_identity.intersect_domain(wrapped_dst_fill);
+  std::cout << "Wrapped Fill Identity: " << wrapped_fill_identity << std::endl;
 
   /* Makes [dst -> data] -> [dst -> data] */
   isl::map uncurried_fill_identity = wrapped_fill_identity.uncurry();
@@ -669,9 +670,12 @@ isl_pw_qpolynomial *cost_mesh_cast_hypercube(
   hypercube_costs = isl_pw_qpolynomial_coalesce(isl_pw_qpolynomial_sub(
     hypercube_costs, isl_pw_qpolynomial_from_pw_aff(one.release())
   ));
+  // Tracks the total cost of the hyperccube cast per data.
+  hypercube_costs = isl_pw_qpolynomial_sum(hypercube_costs);
+  std::cout << "Hypercube Costs: " << isl_pw_qpolynomial_to_str(hypercube_costs) << std::endl;
 
   // returns the hypercube cost as a piecewise polynomial.
-  return isl_pw_qpolynomial_sum(isl_pw_qpolynomial_sum(hypercube_costs));
+  return isl_pw_qpolynomial_sum(hypercube_costs);
 }
 
 
@@ -686,6 +690,7 @@ TransferInfo DistributedMulticastHypercubeModel::Apply(
   isl::map mcs = identify_mesh_casts(
     occupancy.map, fills.map, this->dist_func_
   );
+  std::cout << "Mesh Casts: " << mcs << std::endl;
   isl_pw_qpolynomial *res = cost_mesh_cast_hypercube(
     mcs, this->dist_func_
   );

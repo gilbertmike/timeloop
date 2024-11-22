@@ -196,12 +196,15 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticastHyperCubeModel)
       std::cout << "Dist Func: " << dist_func_str << std::endl;
       std::cout << "Returned Value: " << ret << std::endl;
     } else {
-      BOOST_CHECK(ret == test["expected"]["hypercube_hops"].as<long>());
+      std::cout << "Fill: " << fill_str << std::endl;
+      std::cout << "Occupancy: " << occ_str << std::endl;
+      BOOST_CHECK_EQUAL(ret, test["expected"]["hypercube_hops"].as<long>());
     }
   }
   std::cout << "DistributedMulticastHyperCubeModel Test Passed" << std::endl;
 }
 
+/*
 BOOST_AUTO_TEST_CASE(CollectDataMulticastHyperCubeModel)
 {
   using namespace analysis;
@@ -292,7 +295,7 @@ BOOST_AUTO_TEST_CASE(CollectDataMulticastHyperCubeModel)
     long b2p_hops = isl::manage(isl_pw_qpolynomial_eval(
       b2p_info.p_hops, isl_point_zero(isl_pw_qpolynomial_get_domain_space(b2p_info.p_hops))
     )).get_num_si();
-    std::cout << "D: " << Dint << " | G2P Hops: " << g2p_hops << " | B2P Hops: " << b2p_hops << std::endl;
+    std::cout << "D: " << Dint << " | E2B Hops: " << g2p_hops << " | B2P Hops: " << b2p_hops << std::endl;
   }
   std::cout << "DistributedMulticastHyperCubeModel Test Passed" << std::endl;
 }
