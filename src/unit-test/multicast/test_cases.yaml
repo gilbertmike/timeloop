@@ -48,8 +48,7 @@
 #######################
 # Temporal Test Cases #
 #######################
-##@section 1x1 case
-##@brief Full duplication.
+##@section 1x1 dummy case to catch temporal integration issues.
 # Edge to Src
 -   occ: &1x1_edge |
         {
@@ -133,8 +132,8 @@
         multicast_hops: null
         hypercube_hops: 0
         extent_DOR_hops: null
-##@section 8x8 case.
-##@brief Full duplication.
+##@section 8x8 case for a bigger chip.
+##@brief Full duplication to make sure temporal handling is correct.
 # Edge to Src
 -   occ: &8x8_edge |
         {
@@ -164,14 +163,14 @@
             noc[tm, tn, tk, xs, ys] -> A[m, k] : 
                 0 <= tm < 8 and 0 <= tn < 8 and 0 <= tk < 64 and 
                 0 <= xs < 8 and 0 <= ys < 8  and 
-                m= (8 * tm) + xs and 0 <= k < 64
+                m = (8 * tm) + xs and 0 <= k < 64
         }
-    fill: |
+    fill: &8x8_pe |
         {
             noc[tm, tn, tk, xd, yd] -> A[m, k] : 
                 0 <= tm < 8 and 0 <= tn < 8 and 0 <= tk < 64 and 
                 0 <= xd < 8 and 0 <= yd < 8 and
-                m= (8 * tm) + xd and k=tk
+                m = (8 * tm) + xd and k=tk
         }
     dims: *3t-dim_2s-dim
     dist_func: *3t-dim_2s-dim_manhattan
@@ -181,13 +180,13 @@
         multicast_hops: null
         hypercube_hops: 0
         extent_DOR_hops: null
-##@brief No duplication.
-# Edge to Src
+##@brief No duplication, one time step to ensure spatial handling is correct.
+# Edge to Src, only 1 time step.
 -   occ: *8x8_edge
     fill: |
         {
             noc[tm, tn, xd, yd] -> A[m, k] : 
-                0 <= tm < 8 and 0 <= tn < 8 and tn = 0 and 
+                0 <= tm < 8 and tm = 0 and 0 <= tn < 8 and tn = 0 and 
                 0 <= xd < 8 and 0 <= yd < 8 and 
                 0 <= m < 64 and m = (8 * tm) + xd and 
                 0 <= k < 64 and 0 = (yd - k) % 8
@@ -198,8 +197,77 @@
         latency: null
         total_hops: null
         multicast_hops: null
-        hypercube_hops: 17920
+        hypercube_hops: 9856
         extent_DOR_hops: null
+# Src to Dst, only 1 time step.
+-   occ: |
+        {
+            noc[tm, tn, tk, xd, yd] -> A[m, k] : 
+                0 <= tm < 8 and tm = 0 and 0 <= tn < 8 and tn = 0 and 0 <= tk < 64 and
+                0 <= xd < 8 and 0 <= yd < 8 and 
+                0 <= m < 64 and m = (8 * tm) + xd and 
+                0 <= k < 64 and 0 = (yd - k) % 8
+        }
+    fill: |
+        {
+            noc[tm, tn, tk, xd, yd] -> A[m, k] : 
+                0 <= tm < 8 and tm = 0 and 0 <= tn < 8 and tn = 0 and 0 <= tk < 64 and tk = 0 and
+                0 <= xd < 8 and 0 <= yd < 8 and
+                m = (8 * tm) + xd and k=tk
+        }
+    dims: *3t-dim_2s-dim
+    dist_func: *3t-dim_2s-dim_manhattan
+    expected:
+        latency: null
+        total_hops: null
+        multicast_hops: null
+        hypercube_hops: 56
+        extent_DOR_hops: null
+##@brief No duplication, one spatial dimension to ensure temporal handling is correct.
+##@note, tn = 0 here because otherwise we recast every tn, which is not fundamental to the problem.
+# Edge to Src, only 1 spatial dimension.
+-   occ: *8x8_edge
+    fill: |
+        {
+            noc[tm, tn, xd, yd] -> A[m, k] : 
+                0 <= tm < 8 and 0 <= tn < 8 and tn = 0 and 
+                0 <= xd < 8 and xd = 0 and 0 <= yd < 8 and 
+                0 <= m < 64 and m = (8 * tm) + xd and 
+                0 <= k < 64 and 0 = (yd - k) % 8
+        }
+    dims: *2t-dim_2s-dim
+    dist_func: *2t-dim_2s-dim_manhattan
+    expected:
+        latency: null
+        total_hops: null
+        multicast_hops: null
+        hypercube_hops: 1792
+        extent_DOR_hops: null
+# Src to Dst, only 1 spatial dimension.
+-   occ: |
+        {
+            noc[tm, tn, tk, xd, yd] -> A[m, k] : 
+                0 <= tm < 8 and 0 <= tn < 8 and tn = 0 and 0 <= tk < 64 and
+                0 <= xd < 8 and xd = 0 and 0 <= yd < 8 and 
+                0 <= m < 64 and m = (8 * tm) + xd and 
+                0 <= k < 64 and 0 = (yd - k) % 8
+        }
+    fill: |
+        {
+            noc[tm, tn, tk, xd, yd] -> A[m, k] : 
+                0 <= tm < 8 and 0 <= tn < 8 and tn = 0 and 0 <= tk < 64 and 
+                0 <= xd < 8 and xd = 0 and 0 <= yd < 8 and
+                m = (8 * tm) + xd and k=tk
+        }
+    dims: *3t-dim_2s-dim
+    dist_func: *3t-dim_2s-dim_manhattan
+    expected:
+        latency: null
+        total_hops: null
+        multicast_hops: null
+        hypercube_hops: 3584
+        extent_DOR_hops: null
+
 # -   occ: "{ noc[xs, ys] -> data[d0, d1] : 0 <= d0 < 8 and 0 <= d1 < 8 and (xs=0 or 3<=xs<=4 or xs=7) and (ys=0 or 3<=ys<=4 or ys=7) }"
 #     fill: "{ noc[xd, yd] -> data[d0, d1] : d0 = xd and d1 = yd and 0 <= xd < 8 and 0 <= yd < 8 }"
 #     dims: *2d_spatial

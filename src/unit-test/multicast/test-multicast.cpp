@@ -181,6 +181,8 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticastHyperCubeModel)
       true, isl::map(GetIslCtx(), dist_func_str)
     );
     ///@brief Apply the model
+    DPRINT(fill.map);
+    DPRINT(occ.map);
     TransferInfo info = multicast_model.Apply(buf_id, fill, occ);
     ///@brief Check the results
     isl::val sum_extract = isl::manage(isl_pw_qpolynomial_eval(
@@ -196,8 +198,6 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticastHyperCubeModel)
       std::cout << "Dist Func: " << dist_func_str << std::endl;
       std::cout << "Returned Value: " << ret << std::endl;
     } else {
-      std::cout << "Fill: " << fill_str << std::endl;
-      std::cout << "Occupancy: " << occ_str << std::endl;
       BOOST_CHECK_EQUAL(ret, test["expected"]["hypercube_hops"].as<long>());
     }
   }
