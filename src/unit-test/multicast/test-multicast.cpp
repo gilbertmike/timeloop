@@ -204,7 +204,6 @@ BOOST_AUTO_TEST_CASE(TestDistributedMulticastHyperCubeModel)
   std::cout << "DistributedMulticastHyperCubeModel Test Passed" << std::endl;
 }
 
-/*
 BOOST_AUTO_TEST_CASE(CollectDataMulticastHyperCubeModel)
 {
   using namespace analysis;
@@ -231,7 +230,8 @@ BOOST_AUTO_TEST_CASE(CollectDataMulticastHyperCubeModel)
     noc[tm, tn, tk, xd, yd] -> A[m, k] : 
       0 <= tm < 8 and 0 <= tn < 8 and 0 <= tk < 64 and 
       0 <= xd < 8 and 0 <= yd < 8 and
-      m= (8 * tm) + xd and k=tk
+      0 <= m < 64 and m = (8 * tm) + xd and 
+      0 <= k < 64 and k = tk % 64
   })FILL";
   std::string dist_b2p_str = R"DIST({
     [noc[tm, tn, tk, xd, yd] -> noc[tm, tn, tk, xs, ys]] -> hops[(xd - xs) + (yd - ys)] : 
