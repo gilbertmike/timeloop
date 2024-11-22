@@ -247,7 +247,7 @@
 -   occ: |
         {
             noc[tm, tn, tk, xd, yd] -> A[m, k] : 
-                0 <= tm < 8 and 0 <= tn < 8 and tn = 0 and 0 <= tk < 64 and
+                0 <= tm < 8 and 0 <= tn < 8 and 0 <= tk < 64 and
                 0 <= xd < 8 and xd = 0 and 0 <= yd < 8 and 
                 0 <= m < 64 and m = (8 * tm) + xd and 
                 0 <= k < 64 and 0 = (yd - k) % 8
@@ -255,7 +255,7 @@
     fill: |
         {
             noc[tm, tn, tk, xd, yd] -> A[m, k] : 
-                0 <= tm < 8 and 0 <= tn < 8 and tn = 0 and 0 <= tk < 64 and 
+                0 <= tm < 8 and 0 <= tn < 8 and 0 <= tk < 64 and 
                 0 <= xd < 8 and xd = 0 and 0 <= yd < 8 and
                 m = (8 * tm) + xd and k=tk
         }
@@ -265,7 +265,7 @@
         latency: null
         total_hops: null
         multicast_hops: null
-        hypercube_hops: 3584
+        hypercube_hops: 28672
         extent_DOR_hops: null
 
 # -   occ: "{ noc[xs, ys] -> data[d0, d1] : 0 <= d0 < 8 and 0 <= d1 < 8 and (xs=0 or 3<=xs<=4 or xs=7) and (ys=0 or 3<=ys<=4 or ys=7) }"
