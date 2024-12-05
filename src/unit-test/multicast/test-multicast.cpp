@@ -211,7 +211,7 @@ BOOST_AUTO_TEST_CASE(CollectDataMulticastHyperCubeModel)
   // Global to buffer maps.
   std::string occ_global_str = R"OCC({
     noc[tm, tn, xs, ys] -> A[m, k] : 
-      0 <= tm < 8 and 0 <= tn < 8 and 
+      0 <= tm < 8 and 0 <= tn < 64 and 
       xs=0 and ys=0 and 
       0 <= m < 64 and 0 <= k < 64
   })OCC";
@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE(CollectDataMulticastHyperCubeModel)
   // Buffer to PE maps.
   std::string fill_pes_str = R"FILL({
     noc[tm, tn, tk, xd, yd] -> A[m, k] : 
-      0 <= tm < 8 and 0 <= tn < 8 and 0 <= tk < 64 and 
+      0 <= tm < 8 and 0 <= tn < 64 and 0 <= tk < 64 and 
       0 <= xd < 8 and 0 <= yd < 8 and
       0 <= m < 64 and m = (8 * tm) + xd and 
       0 <= k < 64 and k = tk % 64
@@ -264,13 +264,14 @@ BOOST_AUTO_TEST_CASE(CollectDataMulticastHyperCubeModel)
     true, dist_b2p
   );
 
-  for (int Dint = 1; Dint <= 8; ++Dint) {
+  std::vector<int> Ds = {1, 2, 4, 8};
+  for (int Dint : Ds) {
     std::string D = std::to_string(Dint);
     ///@brief Constructs the 
     int buf_id = 0;
     std::string fill_buffers_str = std::string(R"FILL({
       noc[tm, tn, xd, yd] -> A[m, k] : 
-        0 <= tm < 8 and 0 <= tn < 8 and tn = 0 and 
+        0 <= tm < 8 and 0 <= tn < 64 and tn = 0 and 
         0 <= xd < 8 and 0 <= yd < 8 and 
         m = (8 * tm) + xd and 0 <= k < 64 and 
         0 = ((yd - k) * )FILL" + D + ") % 8}"
@@ -279,7 +280,7 @@ BOOST_AUTO_TEST_CASE(CollectDataMulticastHyperCubeModel)
     Fill fill_buffers = Fill(g2b_dims, isl::map(GetIslCtx(), fill_buffers_str));
     std::string occ_buffers_str = std::string(R"OCC({
       noc[tm, tn, tk, xs, ys] -> A[m, k] : 
-        0 <= tm < 8 and 0 <= tn < 8 and 0 <= tk < 64 and 
+        0 <= tm < 8 and 0 <= tn < 64 and 0 <= tk < 64 and 
         0 <= xs < 8 and 0 <= ys < 8 and 
         m= (8 * tm) + xs and 0 <= k < 64 and 
         0 = ((ys - k) * )OCC" + D + ") % 8}"
