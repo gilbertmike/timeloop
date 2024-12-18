@@ -182,6 +182,7 @@ model/network-simple-multicast.cpp
 model/sparse-optimization-info.cpp
 model/sparse-optimization-parser.cpp
 model/util.cpp
+model/distributed.cpp
 util/banner.cpp
 util/args.cpp
 util/numeric.cpp
@@ -321,6 +322,7 @@ unit-test/compound-config/test-compound-config.cpp
 unittest_sources = Split("""
 unit-test/test-main.cpp
 unit-test/test-simple-link-transfer.cpp
+unit-test/distributed-spec/test-distributed.cpp
 unit-test/multicast/test-multicast.cpp
 unit-test/test-isl-functions.cpp
 unit-test/test-mapping-to-isl.cpp

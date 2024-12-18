@@ -1,0 +1,19 @@
+NOC:
+    topo: Mesh
+    dims:
+        - x
+        - "y"
+    constraints:
+        - 0 <= x < 2
+        - 0 <= y < 2
+    equiv: | 
+        {
+            [NOC[x, y] -> NOC[x', y']] -> hops[(x - x') + (y - y')] : 
+                x >= x' and y >= y';
+            [NOC[x, y] -> NOC[x', y']] -> hops[-(x - x') + -(y - y')] : 
+                x < x' and y < y';
+            [NOC[x, y] -> NOC[x', y']] -> hops[-(x - x') + (y - y')] : 
+                x < x' and y >= y';
+            [NOC[x, y] -> NOC[x', y']] -> hops[(x - x') + -(y - y')] : 
+                x >= x' and y < y'
+        }
