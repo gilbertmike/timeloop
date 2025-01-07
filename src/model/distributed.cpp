@@ -3,7 +3,7 @@
 #include <memory>
 
 namespace distributed {
-isl::pw_aff noc_from_yaml(std::string name, const YAML::Node& root) {
+TopologySpec topology_from_yaml(std::string name, const YAML::Node& root) {
     // Gets the topology type.
     const std::string topo = root["topo"].as<std::string>();
     // Gets the dimensions of the topology.
@@ -13,13 +13,16 @@ isl::pw_aff noc_from_yaml(std::string name, const YAML::Node& root) {
         name, dims, root["constraints"].as<std::vector<std::string>>()
     );
     // Formulates the noc cost function based on the topology.
+    isl::pw_multi_aff noc_cost;
     if (topo == "Mesh") {
-        return mesh_noc(dims, constraints);
+        noc_cost = mesh_noc(dims, constraints);
     } else if (topo == "Torus") {
-        return torus_noc(dims, constraints);
+        noc_cost = torus_noc(dims, constraints);
     } else {
         throw std::runtime_error("Unknown topology type: " + topo);
     }
+
+    return TopologySpec{name, dims, noc_cost, constraints};
 }
 
 std::vector<std::string> get_dims(const YAML::Node& topology) {
@@ -69,17 +72,13 @@ isl::set get_constraints(
  * 
  * @return          A piecewise affine function string representing the Manhattan distance.
  */
-isl::pw_aff mesh_noc(const std::vector<std::string> dims, const isl::set& constraints)
+isl::pw_multi_aff mesh_noc(const std::vector<std::string> dims, const isl::set& constraints)
 {
     // Allocates computer memory for the isl space where dist calculations are done.
     isl::space noc_space = constraints.get_space().map_from_set();
     isl::pw_aff noc_dist = noc_space.wrap().zero_aff_on_domain();
-    // Intersects the domain of the distance function with the constraints.
-    isl::set noc_2_noc = noc_dist.domain().unwrap().intersect_domain(constraints).intersect_range(constraints).wrap();
-    noc_dist = noc_dist.intersect_domain(noc_2_noc);
     // Converts domain into a local space.
     isl_local_space *p_dist_local = isl_local_space_from_space(isl_space_wrap(noc_space.copy()));
-    std::cout << noc_space << std::endl;
     // Constructs all the absolute value affines per dimension and adds to metric.
     for (int i = 0; i < dims.size(); ++i)
     {
@@ -92,7 +91,7 @@ isl::pw_aff mesh_noc(const std::vector<std::string> dims, const isl::set& constr
             isl_local_space_copy(p_dist_local), isl_dim_set, dims.size() + i
         ));
 
-        // Subtracts the dst. 
+        // Subtracts for the dst. 
         isl::pw_aff diff = p1_aff.sub(p2_aff);
         // Grabs the negation.
         isl::pw_aff neg_diff = diff.neg();
@@ -102,11 +101,14 @@ isl::pw_aff mesh_noc(const std::vector<std::string> dims, const isl::set& constr
         // Adds the absolute value affine to the vector.
         noc_dist = noc_dist.add(abs_diff);
     }
+    
+    // Labels the scalar output as hops.
+    isl::id hops_id = isl::id(GetIslCtx(), "hops");
 
-    return noc_dist;
+    return noc_dist.set_range_tuple(hops_id);
 }
 
-isl::pw_aff torus_noc (const std::vector<std::string> dims, const isl::set& constraints)
+isl::pw_multi_aff torus_noc (const std::vector<std::string> dims, const isl::set& constraints)
 {
     throw std::runtime_error("Not implemented yet.");
 }

@@ -14,12 +14,12 @@ BOOST_AUTO_TEST_CASE(TestNocFromYaml)
   YAML::Node file = YAML::LoadFile("./src/unit-test/distributed-spec/distributed.yaml");
   for (const auto& root: file)
   {
-    isl::pw_aff noc = noc_from_yaml(root.first.as<std::string>(), root.second);
-    std::cout << "Computed: " << noc << std::endl;
-    isl::pw_aff exp = isl::pw_aff(GetIslCtx(), root.second["equiv"].as<std::string>());
+    TopologySpec spec = topology_from_yaml(root.first.as<std::string>(), root.second);
+    std::cout << "Computed: " << spec.noc_cost << std::endl;
+    isl::pw_multi_aff exp = isl::pw_multi_aff(GetIslCtx(), root.second["equiv"].as<std::string>());
     std::cout << "Expected: " << exp << std::endl;
     BOOST_ASSERT(
-        isl_pw_aff_is_equal(noc.get(), exp.get())
+        spec.noc_cost.plain_is_equal(exp)
     );
   }
 }

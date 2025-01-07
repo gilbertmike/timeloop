@@ -2,7 +2,7 @@ NOC:
     topo: Mesh
     dims:
         - x
-        - "y"
+        - y
     constraints:
         - 0 <= x < 2
         - 0 <= y < 2

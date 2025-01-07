@@ -9,20 +9,12 @@
 #include "yaml.h"
 
 namespace distributed {
-isl::pw_aff noc_from_yaml(std::string name, const YAML::Node& root);
-std::vector<std::string> get_dims(const YAML::Node& topology);
-isl::set get_constraints(
-    const std::string& name, const std::vector<std::string>& dims, 
-    const std::vector<std::string>& constraints
-);
-isl::pw_aff mesh_noc(const std::vector<std::string> dims, const isl::set& constraints);
-isl::pw_aff torus_noc(const std::vector<std::string> dims, const isl::set& constraints);
-
 struct Noc;
 
 struct TopologySpec {
+    const std::string name;
     const std::vector<std::string> dims;
-    isl::pw_aff noc_cost;
+    isl::pw_multi_aff noc_cost;
     isl::set domain;
 };
 
@@ -41,4 +33,13 @@ struct Buffer {
     PlacementSpec placement;
     isl::map capacity;
 };
+
+TopologySpec topology_from_yaml(std::string name, const YAML::Node& root);
+std::vector<std::string> get_dims(const YAML::Node& topology);
+isl::set get_constraints(
+    const std::string& name, const std::vector<std::string>& dims, 
+    const std::vector<std::string>& constraints
+);
+isl::pw_multi_aff mesh_noc(const std::vector<std::string> dims, const isl::set& constraints);
+isl::pw_multi_aff torus_noc(const std::vector<std::string> dims, const isl::set& constraints);
 };  // namespace distributed
