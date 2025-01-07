@@ -5,8 +5,8 @@ NOC:
         - y
     constraints:
         - 0 <= x < 2
-        - 0 <= y < 2
-    equiv: | 
+        - 0 <= y < 3
+    affine: | 
         {
             [NOC[x, y] -> NOC[x', y']] -> hops[(x - x') + (y - y')] : 
                 x >= x' and y >= y';
@@ -17,6 +17,17 @@ NOC:
             [NOC[x, y] -> NOC[x', y']] -> hops[(x - x') + -(y - y')] : 
                 x >= x' and y < y'
         }
+    domain_restriction: |
+        {
+            [NOC[x, y] -> NOC[x', y']] -> hops[(x - x') + (y - y')] : 
+                x >= x' and y >= y' and 0 <= x < 2 and 0 <= y < 3;
+            [NOC[x, y] -> NOC[x', y']] -> hops[-(x - x') + (y - y')] : 
+                x < x' and y >= y' and 0 <= x < 2 and 0 <= y < 3;
+            [NOC[x, y] -> NOC[x', y']] -> hops[(x - x') + -(y - y')] : 
+                x >= x' and y < y' and 0 <= x < 2 and 0 <= y < 3;
+            [NOC[x, y] -> NOC[x', y']] -> hops[-(x - x') + -(y - y')] : 
+                x < x' and y < y' and 0 <= x < 2 and 0 <= y < 3
+        }
 NOC:
     topo: Mesh
     dims:
@@ -24,10 +35,10 @@ NOC:
         - y
         - z
     constraints:
-        - 0 <= x < 2
-        - 0 <= y < 2
-        - 0 <= z < 2
-    equiv: |
+        - 0 <= x < 2027
+        - 0 <= y < 2029
+        - 0 <= z < 17
+    affine: |
         { 
             [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ (x - x') + (y - y') + (z - z') ] :
                 x >= x' and y >= y' and z >= z';
@@ -45,4 +56,23 @@ NOC:
                 x < x' and y >= y' and z < z';
             [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ -(x - x') - (y - y') - (z - z') ] :
                 x < x' and y < y' and z < z'
+        }
+    domain_restriction: |  
+        { 
+            [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ (x - x') + (y - y') + (z - z') ] :
+                x >= x' and y >= y' and z >= z' and 0 <= x < 2027 and 0 <= y < 2029 and 0 <= z < 17;
+            [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ (x - x') + (y - y') - (z - z') ] :
+                x >= x' and y >= y' and z < z' and 0 <= x < 2027 and 0 <= y < 2029 and 0 <= z < 17;
+            [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ (x - x') - (y - y') + (z - z') ] :
+                x >= x' and y < y' and z >= z' and 0 <= x < 2027 and 0 <= y < 2029 and 0 <= z < 17;
+            [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ -(x - x') + (y - y') + (z - z') ] :
+                x < x' and y >= y' and z >= z' and 0 <= x < 2027 and 0 <= y < 2029 and 0 <= z < 17;
+            [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ -(x - x') - (y - y') + (z - z') ] :
+                x < x' and y < y' and z >= z' and 0 <= x < 2027 and 0 <= y < 2029 and 0 <= z < 17;
+            [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ (x - x') - (y - y') - (z - z') ] :
+                x >= x' and y < y' and z < z' and 0 <= x < 2027 and 0 <= y < 2029 and 0 <= z < 17;
+            [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ -(x - x') + (y - y') - (z - z') ] :
+                x < x' and y >= y' and z < z' and 0 <= x < 2027 and 0 <= y < 2029 and 0 <= z < 17;
+            [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ -(x - x') - (y - y') - (z - z') ] :
+                x < x' and y < y' and z < z' and 0 <= x < 2027 and 0 <= y < 2029 and 0 <= z < 17
         }

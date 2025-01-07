@@ -15,9 +15,22 @@ BOOST_AUTO_TEST_CASE(TestNocFromYaml)
   for (const auto& root: file)
   {
     TopologySpec spec = topology_from_yaml(root.first.as<std::string>(), root.second);
-    isl::pw_multi_aff exp = isl::pw_multi_aff(GetIslCtx(), root.second["equiv"].as<std::string>());
+    isl::pw_multi_aff aff = isl::pw_multi_aff(GetIslCtx(), root.second["affine"].as<std::string>());
+    isl::pw_multi_aff map = isl::pw_multi_aff(GetIslCtx(), root.second["domain_restriction"].as<std::string>());
     BOOST_ASSERT(
-        spec.noc_cost.plain_is_equal(exp)
+      isl_pw_multi_aff_is_equal(
+        spec.noc_cost.copy(), aff.copy()
+      )
+    );
+    isl::set input_domain  = spec.domain.product(spec.domain);
+    isl::pw_multi_aff restricted = spec.noc_cost.intersect_domain(input_domain);
+    std::cout << input_domain << std::endl;
+    std::cout << restricted << std::endl;
+    std::cout << map << std::endl;
+    BOOST_ASSERT(
+      isl_pw_multi_aff_is_equal(
+        restricted.copy(), map.copy()
+      )
     );
   }
 }
