@@ -17,3 +17,32 @@ NOC:
             [NOC[x, y] -> NOC[x', y']] -> hops[(x - x') + -(y - y')] : 
                 x >= x' and y < y'
         }
+NOC:
+    topo: Mesh
+    dims:
+        - x
+        - y
+        - z
+    constraints:
+        - 0 <= x < 2
+        - 0 <= y < 2
+        - 0 <= z < 2
+    equiv: |
+        { 
+            [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ (x - x') + (y - y') + (z - z') ] :
+                x >= x' and y >= y' and z >= z';
+            [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ (x - x') + (y - y') - (z - z') ] :
+                x >= x' and y >= y' and z < z';
+            [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ (x - x') - (y - y') + (z - z') ] :
+                x >= x' and y < y' and z >= z';
+            [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ -(x - x') + (y - y') + (z - z') ] :
+                x < x' and y >= y' and z >= z';
+            [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ -(x - x') - (y - y') + (z - z') ] :
+                x < x' and y < y' and z >= z';
+            [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ (x - x') - (y - y') - (z - z') ] :
+                x >= x' and y < y' and z < z';
+            [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ -(x - x') + (y - y') - (z - z') ] :
+                x < x' and y >= y' and z < z';
+            [NOC[x, y, z] -> NOC[x', y', z']] -> hops[ -(x - x') - (y - y') - (z - z') ] :
+                x < x' and y < y' and z < z'
+        }

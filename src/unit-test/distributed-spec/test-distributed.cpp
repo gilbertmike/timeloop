@@ -15,9 +15,7 @@ BOOST_AUTO_TEST_CASE(TestNocFromYaml)
   for (const auto& root: file)
   {
     TopologySpec spec = topology_from_yaml(root.first.as<std::string>(), root.second);
-    std::cout << "Computed: " << spec.noc_cost << std::endl;
     isl::pw_multi_aff exp = isl::pw_multi_aff(GetIslCtx(), root.second["equiv"].as<std::string>());
-    std::cout << "Expected: " << exp << std::endl;
     BOOST_ASSERT(
         spec.noc_cost.plain_is_equal(exp)
     );
