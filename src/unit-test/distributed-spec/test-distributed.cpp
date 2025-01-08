@@ -25,8 +25,6 @@ BOOST_AUTO_TEST_CASE(TestNocFromYaml)
     isl::set input_domain  = spec.domain.product(spec.domain);
     isl::pw_multi_aff restricted = spec.noc_cost.intersect_domain(input_domain);
     std::cout << input_domain << std::endl;
-    std::cout << restricted << std::endl;
-    std::cout << map << std::endl;
     BOOST_ASSERT(
       isl_pw_multi_aff_is_equal(
         restricted.copy(), map.copy()
