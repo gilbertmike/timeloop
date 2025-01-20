@@ -3,7 +3,7 @@
 #include <memory>
 
 namespace distributed {
-TopologySpec topology_from_yaml(std::string name, const YAML::Node& root) {
+NocSpec topology_from_yaml(std::string name, const YAML::Node& root) {
     // Gets the topology type.
     const std::string topo = root["topo"].as<std::string>();
     // Gets the dimensions of the topology.
@@ -22,7 +22,7 @@ TopologySpec topology_from_yaml(std::string name, const YAML::Node& root) {
         throw std::runtime_error("Unknown topology type: " + topo);
     }
 
-    return TopologySpec{name, dims, noc_cost, constraints};
+    return NocSpec{name, dims, noc_cost, constraints};
 }
 
 std::vector<std::string> get_dims(const YAML::Node& topology) {

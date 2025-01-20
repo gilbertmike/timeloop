@@ -11,7 +11,7 @@
 namespace distributed {
 struct Noc;
 
-struct TopologySpec {
+struct NocSpec {
     const std::string name;
     const std::vector<std::string> dims;
     isl::pw_multi_aff noc_cost;
@@ -19,14 +19,8 @@ struct TopologySpec {
 };
 
 struct PlacementSpec {
-    const Noc &parent;
+    const NocSpec &parent;
     const isl::map placement;   // ArrayID -> NoC
-};
-
-struct Noc {
-    const std::string name;
-    TopologySpec topology;
-    PlacementSpec placement;
 };
 
 struct Buffer {
@@ -34,7 +28,7 @@ struct Buffer {
     isl::map capacity;
 };
 
-TopologySpec topology_from_yaml(std::string name, const YAML::Node& root);
+NocSpec noc_from_yaml(std::string name, const YAML::Node& root);
 std::vector<std::string> get_dims(const YAML::Node& topology);
 isl::set get_constraints(
     const std::string& name, const std::vector<std::string>& dims, 

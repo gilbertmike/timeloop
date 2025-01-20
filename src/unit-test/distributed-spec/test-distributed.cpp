@@ -15,7 +15,7 @@ BOOST_AUTO_TEST_CASE(TestNocFromYaml)
   for (const auto& root: file)
   {
     // Gets this topology spec.
-    TopologySpec spec = topology_from_yaml(root.first.as<std::string>(), root.second);
+    NocSpec spec = topology_from_yaml(root.first.as<std::string>(), root.second);
     BOOST_ASSERT(
       spec.name == root.first.as<std::string>()
     );
