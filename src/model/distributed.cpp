@@ -1,5 +1,7 @@
 #include "isl-wrapper/ctx-manager.hpp"
 #include "model/distributed.hpp"
+
+#include <map>
 #include <memory>
 
 namespace distributed {

@@ -23,11 +23,6 @@ struct PlacementSpec {
     const isl::map placement;   // ArrayID -> NoC
 };
 
-struct Buffer {
-    PlacementSpec placement;
-    isl::map capacity;
-};
-
 NocSpec noc_from_yaml(std::string name, const YAML::Node& root);
 std::vector<std::string> get_dims(const YAML::Node& topology);
 isl::set get_constraints(

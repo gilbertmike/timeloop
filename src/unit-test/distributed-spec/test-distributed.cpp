@@ -14,8 +14,8 @@ BOOST_AUTO_TEST_CASE(TestNocFromYaml)
   YAML::Node file = YAML::LoadFile("./src/unit-test/distributed-spec/distributed.yaml");
   for (const auto& root: file)
   {
-    // Gets this topology spec.
-    NocSpec spec = topology_from_yaml(root.first.as<std::string>(), root.second);
+    // Gets this noc spec.
+    NocSpec spec = noc_from_yaml(root.first.as<std::string>(), root.second);
     BOOST_ASSERT(
       spec.name == root.first.as<std::string>()
     );
