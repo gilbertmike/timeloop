@@ -5,18 +5,12 @@
 architecture:
   version: 0.4
   nodes:
-  - !Container
-    name: system_arch
-
   - !Component
     name: DRAM                 # offchip DRAM is the source of all datatypes
     class: DRAM                # assume DRAM is large enough to store all the data, so no depth specification needed
     attributes:
       datawidth: datawidth
       width: 64                # width in bits
-
-  - !Container
-    name: chip
 
   - !Container
     name: PE

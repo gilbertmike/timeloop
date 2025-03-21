@@ -13,14 +13,14 @@ architecture:
       global_cycle_seconds: 1e-9
       datawidth: 16
   
-  - !Networks
+  - !Network
     name: L2
     topology: Mesh
     dims:
       - x
     constraints:
       - 0 <= x < 2
-  - !Networks
+  - !Network
     name: L1
     topology: Mesh
     dims:
@@ -41,9 +41,6 @@ architecture:
     network:
       level: L2
       placement: {DRAM[i] -> L2[i]}
-
-  - !Container
-    name: chip
 
   - !Container
     name: PE

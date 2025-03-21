@@ -1,0 +1,30 @@
+# ========================================================================
+# Please do not modify this file. If there are double-curly-brace-enclosed
+# statements, they are placeholders that should be set from the notebooks.
+# ========================================================================
+architecture:
+  version: 0.4
+  nodes:
+  - !Binding
+    # name: DRAM # Redundant as for error-handling we can just state that logical
+    # failed to bind to physical.
+    logical: DRAM
+    physical: DRAM
+    # attributes: # Redundant, check tht logical and physical match.
+    #   datawidth: datawidth
+    #   width: 64                # width in bits
+    relation:
+      {
+        LogicalDRAM[i] -> PhysicalDRAM[i] : i = 0
+      } # We will call this the bijection relation.
+  - !Binding
+    logical: PE
+    physical: PE
+    # attributes: # Redundant?
+    #   spatial: {meshX: 1, meshY: 2}
+    relation:
+      {
+        LogicalPE[i] -> PhysicalPE[x, y] :
+          i = x + y * 2
+      } # This is a dimension-major compression into the logical. It is surjective
+        # of the physical onto the logical.
