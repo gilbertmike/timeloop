@@ -1,0 +1,54 @@
+# ========================================================================
+# Please do not modify this file. If there are double-curly-brace-enclosed
+# statements, they are placeholders that should be set from the notebooks.
+# ========================================================================
+architecture:
+  version: 0.4
+  nodes:
+  - !Container
+    name: system_arch
+    attributes:
+      # Top-level attributes inherited by all components unless overridden
+      technology: "45nm"
+      global_cycle_seconds: 1e-9
+      datawidth: 16
+
+  - !Component
+    name: DRAM                 # offchip DRAM is the source of all datatypes
+    class: DRAM                # assume DRAM is large enough to store all the data, so no depth specification needed
+    attributes:
+      datawidth: datawidth
+      width: 64                # width in bits
+
+  - !Container
+    name: chip
+
+  - !Container
+    name: PE
+    spatial: {meshX: 1, meshY: 1}
+
+  - !Component
+    name: scratchpad
+    class: smart_storage  # definitions of the compound classes can be found under "components" folder
+    attributes: {depth: 128, datawidth: datawidth, width: datawidth}
+
+  # registers for the mac unit
+  - !Component
+    name: weight_reg
+    class: reg_storage
+    attributes: {depth: 1, datawidth: datawidth, width: datawidth}
+      
+  - !Component
+    name: input_activation_reg
+    class: reg_storage
+    attributes: {depth: 1, datawidth: datawidth, width: datawidth}
+
+  - !Component
+    name: output_activation_reg
+    class: reg_storage
+    attributes: {depth: 1, datawidth: datawidth, width: datawidth}
+
+  - !Component
+    name: mac
+    class: mac_compute
+    attributes: {num_pipline_stages: 2, datawidth: datawidth}
