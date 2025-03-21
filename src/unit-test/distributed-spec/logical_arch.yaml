@@ -7,30 +7,6 @@ architecture:
   nodes:
   - !Container
     name: system_arch
-    attributes:
-      # Top-level attributes inherited by all components unless overridden
-      technology: "45nm"
-      global_cycle_seconds: 1e-9
-      datawidth: 16
-  
-  - !Networks
-    name: L2
-    topology: Mesh
-    dims:
-      - x
-    constraints:
-      - 0 <= x < 2
-  - !Networks
-    name: L1
-    topology: Mesh
-    dims:
-      - x
-      - y
-    constraints:
-      - 0 <= x < 1
-      - -1 <= y <= 1
-    port: |
-      {L2[x] -> L1[x', y'] : x = 1 and x' = 0 and y' = 0}
 
   - !Component
     name: DRAM                 # offchip DRAM is the source of all datatypes
@@ -38,22 +14,13 @@ architecture:
     attributes:
       datawidth: datawidth
       width: 64                # width in bits
-    network:
-      level: L2
-      placement: {DRAM[i] -> L2[i]}
 
   - !Container
     name: chip
 
   - !Container
     name: PE
-    network:
-      level: L1
-      placement: {
-        PE[i, j] -> L1[x, y] : 
-          j = y and x < 0 and i = -x - 1;
-          j = y and x > 0 and i = x;
-      }
+    spatial: {meshX: 1, meshY: 2}
 
   # registers for the mac unit
   - !Component
