@@ -22,7 +22,6 @@ struct NocSpec { // NoC specification
 typedef std::pair<const std::shared_ptr<NocSpec>, isl::map> PlacementSpec;
 struct PhysicalComponent { // Component of physical spec attached to NOC
     const std::string name;
-    const std::string type;
     PlacementSpec placement;
 };
 // Physical component aliases for static analysis.
@@ -37,7 +36,6 @@ struct PhysicalSpec { // Physical specification
 
 struct LogicalComponent { // Logical component of the accelerator.
     const std::string name;
-    const std::string type;
     isl::set domain;
 };
 // Logical component aliases for static analysis.
