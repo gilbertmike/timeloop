@@ -1,7 +1,3 @@
-# ========================================================================
-# Please do not modify this file. If there are double-curly-brace-enclosed
-# statements, they are placeholders that should be set from the notebooks.
-# ========================================================================
 binding:
   version: 0.4
   
