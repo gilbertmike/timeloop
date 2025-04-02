@@ -44,8 +44,9 @@ struct LogicalSpec {
 
 struct BindingSpec {
     const std::string name;
-    const PhysicalSpec physical_spec;
-    const LogicalSpec logical_spec;
+    const std::shared_ptr<PhysicalSpec> physical_spec;
+    const std::shared_ptr<LogicalSpec> logical_spec;
+    const std::vector<isl::map> bindings;
 };
 
 NocSpec noc_from_yaml(std::string name, const YAML::Node& root);
