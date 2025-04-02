@@ -26,12 +26,18 @@ struct PhysicalComponent { // Component of physical spec attached to NOC
 };
 // Physical component aliases for static analysis.
 typedef PhysicalComponent PhysicalStorage;
-typedef PhysicalComponent Port;
 typedef PhysicalComponent PhysicalProcessingElement;
+// Ports connecting different NoC components.
+struct Port { // Port of the physical component
+    const std::shared_ptr<NocSpec> parent;
+    const std::shared_ptr<NocSpec> child;
+    isl::map port_map;
+};
 
 struct PhysicalSpec { // Physical specification
     const std::string name;
     const std::vector<PhysicalComponent> components;
+    const std::vector<Port> ports;
 };
 
 struct LogicalComponent { // Logical component of the accelerator.
