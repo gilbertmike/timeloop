@@ -25,6 +25,10 @@ struct PhysicalComponent { // Component of physical spec attached to NOC
     const std::string type;
     PlacementSpec placement;
 };
+// Physical component aliases for static analysis.
+typedef PhysicalComponent PhysicalStorage;
+typedef PhysicalComponent Port;
+typedef PhysicalComponent PhysicalProcessingElement;
 
 struct PhysicalSpec { // Physical specification
     const std::string name;
@@ -36,6 +40,9 @@ struct LogicalComponent { // Logical component of the accelerator.
     const std::string type;
     isl::set domain;
 };
+// Logical component aliases for static analysis.
+typedef LogicalComponent LogicalStorage;
+typedef LogicalComponent LogicalProcessingElement;
 
 struct LogicalSpec {
     const std::string name;
