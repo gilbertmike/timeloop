@@ -2,7 +2,6 @@
 #include "model/distributed.hpp"
 
 #include <map>
-#include <memory>
 
 namespace distributed {
 NocSpec topology_from_yaml(std::string name, const YAML::Node& root) {
@@ -113,5 +112,69 @@ isl::pw_multi_aff mesh_noc(const std::vector<std::string> dims, const isl::set& 
 isl::pw_multi_aff torus_noc (const std::vector<std::string> dims, const isl::set& constraints)
 {
     throw std::runtime_error("Not implemented yet.");
+}
+
+PhysicalSpec physical_spec_from_yaml(
+    std::string name, const YAML::Node& root
+) {
+    // Gets the physical spec name.
+    std::string spec_name = root["name"].as<std::string>();
+    
+    // Reads in all the network specifications first.
+    std::unordered_map<std::string, std::shared_ptr<const NocSpec>> noc_specs;
+    for (const auto& node: root)
+    {
+        // Checks that it has the !Network tag.
+        if (node.Tag() == "!Network")
+        {
+            // Gets the noc spec.
+            const NocSpec noc_spec = topology_from_yaml(
+                node.first.as<std::string>(), node.second
+            );
+            // Ensures each NocSpec has a unique name.
+            if (noc_specs.find(noc_spec.name) != noc_specs.end())
+            {
+                throw std::runtime_error("Noc spec already exists: " + noc_spec.name);
+            }
+            // Adds the noc spec to the map.
+            noc_specs[noc_spec.name] = std::make_shared<const NocSpec>(noc_spec);
+        }
+    }
+    
+    // Reads in the rest of the components.
+    std::vector<PhysicalComponent> components;
+    for (const auto& node: root)
+    {
+        // Checks that it has the !Component tag.
+        if (node.Tag() == "!Component")
+        {
+            // Gets the component name.
+            std::string comp_name = node["name"].as<std::string>();
+            // Fetches the network information.
+            auto network_node = node["network"];
+            std::string noc_name = network_node["name"].as<std::string>();
+            isl::map placement_map = isl::map(
+                GetIslCtx(), network_node["placement"].as<std::string>()
+            );
+
+            // Gets the noc spec.
+            auto noc_it = noc_specs.find(noc_name);
+            if (noc_it == noc_specs.end()) {
+                throw std::runtime_error("Noc spec not found: " + noc_name);
+            }
+            const NocSpec noc_spec = *noc_it->second;
+
+            // Creates the placement spec.
+            PlacementSpec placement_spec(noc_spec, placement_map);
+
+            // Creates the component.
+            PhysicalComponent component{
+                comp_name,
+                placement_spec
+            };
+            // Adds the component to the vector.
+            components.push_back(component);
+        }
+    }
 }
 }  // namespace distributed

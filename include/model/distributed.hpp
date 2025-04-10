@@ -14,15 +14,30 @@ namespace distributed {
 struct NocSpec { // NoC specification
     const std::string name;
     const std::vector<std::string> dims;
-    isl::pw_multi_aff noc_cost;
-    isl::set domain;
+    const isl::pw_multi_aff noc_cost;
+    const isl::set domain;
 };
 
-// Placement specification of a component on a NoC.
-typedef std::pair<const std::shared_ptr<NocSpec>, isl::map> PlacementSpec;
+struct PlacementSpec { // Placement specification of a component on a NoC
+    const NocSpec &noc_spec;
+    const isl::map placement_map;
+
+    /// @brief Validates the placement map upon construction.
+    PlacementSpec(
+        const NocSpec &noc_spec, const isl::map &placement_map
+    ) : noc_spec(noc_spec), placement_map(placement_map) {
+        // Extracts the domain from the placement map.
+        isl::set domain = noc_spec.domain;
+        // Checks if the range of the placement map is a subset of the domain.
+        if (!placement_map.range().is_subset(domain)) {
+            throw std::runtime_error("Placement map range is not a subset of the domain.");
+        }
+    }
+};
+
 struct PhysicalComponent { // Component of physical spec attached to NOC
     const std::string name;
-    PlacementSpec placement;
+    const PlacementSpec placement;
 };
 // Physical component aliases for static analysis.
 typedef PhysicalComponent PhysicalStorage;
