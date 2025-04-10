@@ -405,6 +405,7 @@ DistributedMulticastHypercubeModel::DistributedMulticastHypercubeModel(
   bool count_hops, isl::map dist_func
 ): count_hops_(count_hops), dist_func_(dist_func)
 {
+  (void) count_hops_;
 }
 
 
