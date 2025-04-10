@@ -4,7 +4,7 @@
 #include <map>
 
 namespace distributed {
-NocSpec topology_from_yaml(std::string name, const YAML::Node& root) {
+NocSpec noc_from_yaml(std::string name, const YAML::Node& root) {
     // Gets the topology type.
     const std::string topo = root["topo"].as<std::string>();
     // Gets the dimensions of the topology.
@@ -128,7 +128,7 @@ PhysicalSpec physical_spec_from_yaml(
         if (node.Tag() == "!Network")
         {
             // Gets the noc spec.
-            const NocSpec noc_spec = topology_from_yaml(
+            const NocSpec noc_spec = noc_from_yaml(
                 node.first.as<std::string>(), node.second
             );
             // Ensures each NocSpec has a unique name.

@@ -615,7 +615,7 @@ std::vector<__isl_give isl::pw_aff> calculate_extents(
   for (unsigned noc_dim = 0; noc_dim < dimensions; noc_dim++) {
     /// @brief Projects out all the dimensions of the output besides noc_dim.
     project_out[noc_dim] = false;
-    isl::map extent_mapper = isl::manage(isl::dim_projector<std::vector<bool>>(
+    isl::map extent_mapper = isl::manage(isl::dim_projector(
       isl_space_copy(casting_extents.range().get_space().get()), project_out
     )).reverse();
     isl::map dim_extent_space = casting_extents.apply_range(extent_mapper);

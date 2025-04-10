@@ -76,10 +76,7 @@ else:
     print("Using dynamic linking.")
 
 env.Append(LIBS = ['boost_iostreams', 'boost_serialization'])
-if str(Platform()) != 'darwin':
-    env.Append(LIBS = ['boost_thread'])
-else:
-    env.Append(LIBS = ['boost_thread-mt'])    
+env.Append(LIBS = ['boost_thread'])  
 #env.Append(LIBS = ['boost_iostreams', 'boost_serialization', 'boost_thread' ])
 
 if os.environ.get('BOOSTDIR'):
