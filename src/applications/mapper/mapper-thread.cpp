@@ -269,6 +269,7 @@ MapperThread::MapperThread(
   mapspace::MapSpace* mapspace,
   std::mutex* mutex,
   uint128_t search_size,
+  uint128_t evaluated_size,
   std::uint32_t timeout,
   std::uint32_t victory_condition,
   std::int32_t max_temporal_loops_in_a_mapping,
@@ -299,6 +300,7 @@ MapperThread::MapperThread(
     mapspace_(mapspace),
     mutex_(mutex),
     search_size_(search_size),
+    evaluated_size_(evaluated_size),
     timeout_(timeout),
     victory_condition_(victory_condition),
     max_temporal_loops_in_a_mapping_(max_temporal_loops_in_a_mapping),
@@ -428,6 +430,16 @@ void MapperThread::Run()
                   << " invalid mappings (" << invalid_mappings_mapcnstr << " fanout, "
                   << invalid_mappings_eval << " capacity) found since the last valid mapping, "
                   << "terminating search." << std::endl;
+      mutex_->unlock();
+      terminate = true;
+    }
+
+    if (evaluated_size_ > 0 && total_mappings >= evaluated_size_)
+    {
+      mutex_->lock();
+      log_stream_ << "[" << std::setw(3) << thread_id_ << "] STATEMENT: " << evaluated_size_
+                  << " total mappings evaluated, terminating search."
+                  << std::endl;
       mutex_->unlock();
       terminate = true;
     }

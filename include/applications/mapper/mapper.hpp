@@ -84,6 +84,7 @@ class Mapper
   sparse::SparseOptimizationInfo* sparse_optimizations_;
 
   uint128_t search_size_;
+  uint128_t evaluated_size_;
   std::uint32_t num_threads_;
   std::uint32_t timeout_;
   std::uint32_t victory_condition_;

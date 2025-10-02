@@ -195,6 +195,12 @@ Mapper::Mapper(config::CompoundConfig* config,
     search_size = 1 + (search_size - 1) / num_threads_;
   search_size_ = static_cast<uint128_t>(search_size);
 
+  std::uint32_t evaluated_size = 0;
+  mapper.lookupValue("evaluated_size", evaluated_size);
+  if (evaluated_size > 0)
+    evaluated_size = 1 + (evaluated_size - 1) / num_threads_;
+  evaluated_size_ = static_cast<uint128_t>(evaluated_size);
+
   // Number of consecutive invalid mappings to trigger termination.
   timeout_ = 1000;
   mapper.lookupValue("timeout", timeout_);
@@ -417,6 +423,7 @@ Mapper::Result Mapper::Run()
                                         split_mapspaces_.at(t),
                                         &mutex,
                                         search_size_,
+                                        evaluated_size_,
                                         timeout_,
                                         victory_condition_,
                                         max_temporal_loops_in_a_mapping_,

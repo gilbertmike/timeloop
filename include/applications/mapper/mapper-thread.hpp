@@ -94,6 +94,7 @@ class MapperThread
   mapspace::MapSpace* mapspace_;
   std::mutex* mutex_;
   uint128_t search_size_;
+  uint128_t evaluated_size_;
   std::uint32_t timeout_;
   std::uint32_t victory_condition_;
   std::int32_t max_temporal_loops_in_a_mapping_;
@@ -130,6 +131,7 @@ class MapperThread
     mapspace::MapSpace* mapspace,
     std::mutex* mutex,
     uint128_t search_size,
+    uint128_t evaluated_size,
     std::uint32_t timeout,
     std::uint32_t victory_condition,
     std::int32_t max_temporal_loops_in_a_mapping,
